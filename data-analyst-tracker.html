@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Analyst Track — 21-Day Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0D1117;
+    --panel:#121821;
+    --panel-2:#161D28;
+    --line:#232C39;
+    --line-soft:#1B222D;
+    --text:#E7EAEE;
+    --text-dim:#8993A1;
+    --text-faint:#5C6472;
+    --amber:#E3A008;
+    --amber-dim:#8A6412;
+    --teal:#3FAE95;
+    --rose:#D9705D;
+    --mono:'IBM Plex Mono', ui-monospace, monospace;
+    --sans:'IBM Plex Sans', system-ui, sans-serif;
+  }
+  :root:not([data-theme="light"]){ }
+  :root[data-theme="light"]{
+    --bg:#F5F4F0;
+    --panel:#FFFFFF;
+    --panel-2:#FBFAF7;
+    --line:#DDD9CF;
+    --line-soft:#E9E6DE;
+    --text:#1B1E22;
+    --text-dim:#5C6472;
+    --text-faint:#8B8F94;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#F5F4F0;
+      --panel:#FFFFFF;
+      --panel-2:#FBFAF7;
+      --line:#DDD9CF;
+      --line-soft:#E9E6DE;
+      --text:#1B1E22;
+      --text-dim:#5C6472;
+      --text-faint:#8B8F94;
+    }
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+
+  a{color:var(--teal);text-decoration:none;border-bottom:1px solid rgba(63,174,149,0.35);}
+  a:hover{border-bottom-color:var(--teal);}
+
+  .app{
+    max-width:1180px;
+    margin:0 auto;
+    padding:28px 20px 80px;
+  }
+
+  /* ---------- Header / ledger strip ---------- */
+  header.top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    gap:24px;
+    border-bottom:1px solid var(--line);
+    padding-bottom:18px;
+    margin-bottom:22px;
+    flex-wrap:wrap;
+  }
+  .brand{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+  .brand .kicker{
+    font-family:var(--mono);
+    font-size:12px;
+    letter-spacing:0.02em;
+    color:var(--text-faint);
+  }
+  .brand h1{
+    margin:0;
+    font-size:26px;
+    font-weight:600;
+    letter-spacing:-0.01em;
+  }
+  .progress-block{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    min-width:260px;
+  }
+  .progress-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-family:var(--mono);
+    font-size:12.5px;
+    color:var(--text-dim);
+  }
+  .progress-row strong{color:var(--text);font-weight:600;}
+  .bar-track{
+    width:220px;
+    height:8px;
+    background:var(--line-soft);
+    border:1px solid var(--line);
+    position:relative;
+    overflow:hidden;
+  }
+  .bar-fill{
+    height:100%;
+    background:linear-gradient(90deg, var(--amber-dim), var(--amber));
+    width:0%;
+    transition:width 0.4s ease;
+  }
+  .reset-link{
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--text-faint);
+    background:none;
+    border:none;
+    cursor:pointer;
+    padding:0;
+    text-align:right;
+    text-decoration:underline;
+    text-underline-offset:2px;
+  }
+  .reset-link:hover{color:var(--rose);}
+
+  /* ---------- Tabs (Track / Portfolio) ---------- */
+  .view-tabs{
+    display:flex;
+    gap:2px;
+    margin-bottom:20px;
+    border:1px solid var(--line);
+    width:fit-content;
+  }
+  .view-tabs button{
+    font-family:var(--mono);
+    font-size:12.5px;
+    padding:9px 18px;
+    background:var(--panel);
+    color:var(--text-dim);
+    border:none;
+    cursor:pointer;
+    border-right:1px solid var(--line);
+  }
+  .view-tabs button:last-child{border-right:none;}
+  .view-tabs button.active{
+    background:var(--panel-2);
+    color:var(--text);
+  }
+  .view-tabs button:hover:not(.active){color:var(--text);}
+
+  /* ---------- Layout: sidebar + main ---------- */
+  .layout{
+    display:grid;
+    grid-template-columns:250px 1fr;
+    gap:0;
+    border:1px solid var(--line);
+    background:var(--panel);
+  }
+  @media (max-width:820px){
+    .layout{grid-template-columns:1fr;}
+    .sidebar{border-right:none !important;border-bottom:1px solid var(--line);}
+  }
+
+  .sidebar{
+    border-right:1px solid var(--line);
+    max-height:none;
+  }
+  .week-group{border-bottom:1px solid var(--line-soft);}
+  .week-group:last-child{border-bottom:none;}
+  .week-label{
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:0.03em;
+    color:var(--text-faint);
+    padding:10px 14px 6px;
+  }
+  .day-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:8px 14px;
+    cursor:pointer;
+    border-left:2px solid transparent;
+  }
+  .day-row:hover{background:var(--line-soft);}
+  .day-row.active{
+    background:var(--panel-2);
+    border-left:2px solid var(--amber);
+  }
+  .chk{
+    width:15px;height:15px;
+    border:1px solid var(--text-faint);
+    flex:0 0 auto;
+    display:flex;align-items:center;justify-content:center;
+    font-size:10px;
+    color:transparent;
+    font-family:var(--mono);
+  }
+  .chk.done{
+    background:var(--amber);
+    border-color:var(--amber);
+    color:#15140D;
+  }
+  .day-row .num{
+    font-family:var(--mono);
+    font-size:11.5px;
+    color:var(--text-faint);
+    width:16px;
+  }
+  .day-row .label{
+    font-size:13px;
+    color:var(--text-dim);
+    line-height:1.25;
+  }
+  .day-row.active .label{color:var(--text);}
+  .day-row.done .label{color:var(--text-faint);text-decoration:line-through;text-decoration-color:var(--text-faint);}
+
+  /* ---------- Main panel ---------- */
+  .main{padding:26px 30px 34px;}
+  .main-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:20px;
+    border-bottom:1px solid var(--line-soft);
+    padding-bottom:16px;
+    margin-bottom:20px;
+    flex-wrap:wrap;
+  }
+  .main-head .meta{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--text-faint);
+    margin-bottom:6px;
+  }
+  .main-head h2{
+    margin:0;
+    font-size:22px;
+    font-weight:600;
+    letter-spacing:-0.01em;
+  }
+  .complete-toggle{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    font-family:var(--mono);
+    font-size:12.5px;
+    padding:9px 14px;
+    border:1px solid var(--line);
+    background:var(--panel-2);
+    cursor:pointer;
+    color:var(--text-dim);
+    white-space:nowrap;
+  }
+  .complete-toggle.done{
+    border-color:var(--amber);
+    color:var(--amber);
+  }
+  .complete-toggle .box{
+    width:14px;height:14px;
+    border:1px solid currentColor;
+    display:flex;align-items:center;justify-content:center;
+    font-size:10px;
+  }
+  .complete-toggle.done .box{background:var(--amber);color:#15140D;}
+
+  .topics-line{
+    font-size:14px;
+    color:var(--text-dim);
+    line-height:1.6;
+    margin-bottom:26px;
+  }
+  .topics-line span{
+    color:var(--text);
+    background:var(--line-soft);
+    padding:2px 7px;
+    margin-right:6px;
+    display:inline-block;
+    margin-bottom:6px;
+    font-size:12.5px;
+    font-family:var(--mono);
+  }
+
+  .section{margin-bottom:26px;}
+  .section h3{
+    font-family:var(--mono);
+    font-size:11.5px;
+    letter-spacing:0.04em;
+    color:var(--text-faint);
+    margin:0 0 10px;
+    padding-bottom:6px;
+    border-bottom:1px solid var(--line-soft);
+  }
+  .link-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px;}
+  .link-list li{font-size:14px;color:var(--text-dim);}
+  .link-list li a{color:var(--text);font-weight:500;}
+
+  .split-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  @media (max-width:640px){.split-2{grid-template-columns:1fr;}}
+  .proj-card{
+    border:1px solid var(--line-soft);
+    padding:14px 16px;
+    background:var(--panel-2);
+  }
+  .proj-card .tag{
+    font-family:var(--mono);
+    font-size:10.5px;
+    color:var(--teal);
+    letter-spacing:0.03em;
+    margin-bottom:6px;
+    display:block;
+  }
+  .proj-card.big .tag{color:var(--rose);}
+  .proj-card p{margin:0;font-size:13.5px;color:var(--text-dim);line-height:1.55;}
+
+  .qa-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:0;}
+  .qa-list li{
+    font-size:13.5px;
+    color:var(--text-dim);
+    padding:9px 0;
+    border-bottom:1px solid var(--line-soft);
+    display:flex;
+    gap:10px;
+  }
+  .qa-list li:last-child{border-bottom:none;}
+  .qa-list li .qnum{font-family:var(--mono);color:var(--text-faint);flex:0 0 auto;}
+
+  .nav-buttons{
+    display:flex;justify-content:space-between;margin-top:30px;
+    border-top:1px solid var(--line-soft);
+    padding-top:18px;
+  }
+  .nav-buttons button{
+    font-family:var(--mono);
+    font-size:12px;
+    background:none;
+    border:1px solid var(--line);
+    color:var(--text-dim);
+    padding:8px 14px;
+    cursor:pointer;
+  }
+  .nav-buttons button:hover:not(:disabled){color:var(--text);border-color:var(--text-faint);}
+  .nav-buttons button:disabled{opacity:0.3;cursor:default;}
+
+  /* Portfolio view */
+  .portfolio-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:0;
+    border:1px solid var(--line);
+    background:var(--panel);
+  }
+  @media (max-width:900px){.portfolio-grid{grid-template-columns:1fr;}}
+  .pf-card{
+    padding:22px 22px 24px;
+    border-right:1px solid var(--line);
+    display:flex;flex-direction:column;
+  }
+  .pf-card:last-child{border-right:none;}
+  .pf-card .pf-num{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--text-faint);
+    margin-bottom:10px;
+  }
+  .pf-card h3{margin:0 0 10px;font-size:17px;font-weight:600;}
+  .pf-card p{font-size:13.5px;color:var(--text-dim);line-height:1.6;margin:0 0 16px;}
+  .pf-card .section h4{
+    font-family:var(--mono);font-size:10.5px;color:var(--text-faint);
+    letter-spacing:0.03em;margin:0 0 8px;
+  }
+  .pf-card .section{margin-bottom:16px;}
+  .pf-card .link-list li{font-size:13px;}
+  .pf-toggle{
+    margin-top:auto;
+    display:flex;align-items:center;gap:9px;
+    font-family:var(--mono);font-size:12px;
+    border:1px solid var(--line);
+    padding:8px 12px;
+    cursor:pointer;
+    color:var(--text-dim);
+    background:var(--panel-2);
+  }
+  .pf-toggle.done{border-color:var(--amber);color:var(--amber);}
+  .pf-toggle .box{width:13px;height:13px;border:1px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:9px;}
+  .pf-toggle.done .box{background:var(--amber);color:#15140D;}
+
+  footer.foot{
+    margin-top:30px;
+    font-family:var(--mono);
+    font-size:11.5px;
+    color:var(--text-faint);
+    text-align:center;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="top">
+    <div class="brand">
+      <span class="kicker">21-DAY STUDY LEDGER</span>
+      <h1>Data Analyst Track</h1>
+    </div>
+    <div class="progress-block">
+      <div class="progress-row">
+        <span>DAYS</span>
+        <div class="bar-track"><div class="bar-fill" id="barFill"></div></div>
+        <strong id="progressCount">0 / 21</strong>
+      </div>
+      <button class="reset-link" id="resetBtn">clear all progress</button>
+    </div>
+  </header>
+
+  <div class="view-tabs">
+    <button id="tabTrack" class="active">Daily Track</button>
+    <button id="tabPortfolio">Portfolio Projects</button>
+  </div>
+
+  <div id="trackView" class="layout">
+    <nav class="sidebar" id="sidebar"></nav>
+    <main class="main" id="main"></main>
+  </div>
+
+  <div id="portfolioView" style="display:none;">
+    <div class="portfolio-grid" id="portfolioGrid"></div>
+  </div>
+
+  <footer class="foot">progress is saved on this device only — nothing is uploaded</footer>
+</div>
+
+<script>
+/* ---------------- Data ---------------- */
+const DAYS = [
+  {id:1, week:1, dow:"Mon", topic:"SQL — Filtering & Aggregation",
+    subtopics:["SELECT & WHERE","GROUP BY","Aggregate functions"],
+    material:[["SQLBolt — interactive SQL lessons","https://sqlbolt.com"],["Mode Analytics SQL Tutorial","https://mode.com/sql-tutorial/"]],
+    videos:[["Alex The Analyst — SQL for Beginners playlist","https://www.youtube.com/@AlexTheAnalyst"],["freeCodeCamp — SQL full course","https://www.freecodecamp.org/news/tag/sql/"]],
+    flashcards:[["Anki — search \"SQL Basics\" shared decks","https://ankiweb.net/shared/decks"],["Quizlet — \"SQL Functions\"","https://quizlet.com/subject/sql/"]],
+    small:"Query a sample orders table to find total revenue per month using SUM and GROUP BY.",
+    big:"Load the Kaggle \"Online Retail\" dataset into a SQL table and build a monthly revenue trend query with month-over-month change.",
+    interview:["What's the difference between WHERE and HAVING?","Write a query to find the 2nd highest salary in a table.","How is GROUP BY different from DISTINCT?"]},
+
+  {id:2, week:1, dow:"Tue", topic:"Excel / Power BI — Pivots & Data Modeling",
+    subtopics:["Pivot tables","XLOOKUP","Power BI data modeling basics"],
+    material:[["Microsoft Learn — Power BI learning path","https://learn.microsoft.com/en-us/training/powerplatform/power-bi"],["ExcelJet — XLOOKUP guide","https://exceljet.net/functions/xlookup-function"]],
+    videos:[["Leila Gharani — Excel & Power BI channel","https://www.youtube.com/@LeilaGharani"],["Microsoft Power BI — official channel","https://www.youtube.com/@mspowerbi"]],
+    flashcards:[["Quizlet — \"Excel Functions\"","https://quizlet.com/subject/excel/"]],
+    small:"Build a pivot table summarizing sales totals by region and product category.",
+    big:"Model a retail dataset in Power BI (fact + dimension tables) and build a KPI summary page.",
+    interview:["VLOOKUP vs XLOOKUP — what changed?","What's the difference between a calculated column and a measure?","How do you handle a many-to-many relationship in a data model?"]},
+
+  {id:3, week:1, dow:"Wed", topic:"HTML / JSON — API Data Structures",
+    subtopics:["JSON structure","Key-value nesting","REST API payloads"],
+    material:[["W3Schools — JSON Tutorial","https://www.w3schools.com/js/js_json_intro.asp"],["MDN — Working with JSON","https://developer.mozilla.org/en-US/docs/Learn/JavaScript/Objects/JSON"]],
+    videos:[["freeCodeCamp — JSON crash course","https://www.youtube.com/results?search_query=freecodecamp+json+crash+course"]],
+    flashcards:[["Quizlet — \"JSON & APIs\"","https://quizlet.com/subject/json/"]],
+    small:"Manually parse a sample JSON API response and pull out three fields into a table.",
+    big:"Call a public REST API (e.g. JSONPlaceholder) and structure the nested response into a clean flat table.",
+    interview:["What's the difference between JSON and XML?","What is a REST API endpoint?","How would you handle a missing key in a JSON payload?"]},
+
+  {id:4, week:1, dow:"Thu", topic:"Python — Pandas Fundamentals",
+    subtopics:["DataFrames","Filtering","Cleaning messy columns"],
+    material:[["Kaggle Learn — Pandas","https://www.kaggle.com/learn/pandas"],["Kaggle Learn — Intro to Programming","https://www.kaggle.com/learn/intro-to-programming"]],
+    videos:[["Corey Schafer — Pandas playlist","https://www.youtube.com/results?search_query=corey+schafer+pandas"],["Keith Galli — Pandas tutorial","https://www.youtube.com/@KeithGalli"]],
+    flashcards:[["Anki — \"Pandas Cheatsheet\" shared deck","https://ankiweb.net/shared/decks"]],
+    small:"Load a messy CSV, drop duplicate rows, and fill or drop missing values.",
+    big:"Clean a real messy dataset end-to-end (e.g. Kaggle Titanic) — types, nulls, outliers — and document each fix.",
+    interview:["What's the difference between .loc and .iloc?","How do you handle missing data in pandas?","What does inplace=True actually do?"]},
+
+  {id:5, week:1, dow:"Fri", topic:"Statistics — Descriptive Foundations",
+    subtopics:["Mean, median, mode","Standard deviation","Hypothesis testing basics"],
+    material:[["Khan Academy — Statistics & Probability","https://www.khanacademy.org/math/statistics-probability"]],
+    videos:[["StatQuest with Josh Starmer","https://www.youtube.com/@statquest"]],
+    flashcards:[["Quizlet — \"Descriptive Statistics\"","https://quizlet.com/subject/descriptive-statistics/"]],
+    small:"Compute mean, median, mode, and standard deviation on a small dataset by hand and in Python.",
+    big:"Run a basic hypothesis test comparing two groups in a real dataset and interpret the result in plain language.",
+    interview:["Explain a p-value like I'm not a statistician.","What's the difference between population and sample?","When would you use median instead of mean?"]},
+
+  {id:6, week:1, dow:"Sat", topic:"Project Day — Mini End-to-End Analysis",
+    subtopics:["Combining SQL + Excel","Simple dashboard build"],
+    material:[["Maven Analytics — free guided projects","https://www.mavenanalytics.io/"],["Kaggle Datasets","https://www.kaggle.com/datasets"]],
+    videos:[["Alex The Analyst — project walkthroughs","https://www.youtube.com/@AlexTheAnalyst"]],
+    flashcards:[["Anki — Week 1 review deck (self-made)","https://ankiweb.net/"]],
+    small:"Build a one-table Excel or SQL summary answering a single business question.",
+    big:"Combine SQL and Excel on one dataset into a mini dashboard covering revenue, top products, and trend.",
+    interview:["Walk me through how you'd start a new analysis with a dataset you've never seen.","How do you decide which questions to answer first?"]},
+
+  {id:7, week:1, dow:"Sun", topic:"Interview Masterclass — Behavioral Prep",
+    subtopics:["Resume alignment","STAR method","\"Tell me about a time…\""],
+    material:[["Interview Query — free blog","https://www.interviewquery.com/blog"]],
+    videos:[["Alex The Analyst — data analyst interview prep","https://www.youtube.com/@AlexTheAnalyst"]],
+    flashcards:[["Quizlet — \"Behavioral Interview STAR\"","https://quizlet.com/subject/behavioral-interview/"]],
+    small:"Draft three STAR stories from your own experience (conflict, mistake, impact).",
+    big:"Rewrite your resume bullets using the \"Did X using Y, resulting in Z\" formula, aligned to a real job post.",
+    interview:["Tell me about yourself.","Tell me about a time you dealt with conflicting priorities.","Tell me about a project you're proud of."]},
+
+  {id:8, week:2, dow:"Mon", topic:"SQL — Joins, Subqueries & CTEs",
+    subtopics:["INNER / LEFT joins","Subqueries","Common Table Expressions"],
+    material:[["LeetCode — SQL Easy problems","https://leetcode.com/problemset/database/"],["Mode Analytics — SQL Joins tutorial","https://mode.com/sql-tutorial/sql-joins/"]],
+    videos:[["Alex The Analyst — SQL Joins explained","https://www.youtube.com/@AlexTheAnalyst"]],
+    flashcards:[["Anki — \"SQL Joins\" shared deck","https://ankiweb.net/shared/decks"]],
+    small:"Write INNER and LEFT JOIN queries across two related tables.",
+    big:"Use CTEs to build a multi-table customer cohort retention query.",
+    interview:["CTE vs subquery — when would you pick one over the other?","When would you use a LEFT JOIN instead of an INNER JOIN?","How do you find duplicate rows with SQL?"]},
+
+  {id:9, week:2, dow:"Tue", topic:"Power BI — DAX & KPI Cards",
+    subtopics:["CALCULATE, SUMX","KPI card design"],
+    material:[["SQLBI — DAX guide","https://www.sqlbi.com/guides/dax/"],["Microsoft Learn — DAX basics","https://learn.microsoft.com/en-us/dax/"]],
+    videos:[["Guy in a Cube — Power BI channel","https://www.youtube.com/@GuyInACube"]],
+    flashcards:[["Quizlet — \"DAX Functions\"","https://quizlet.com/subject/dax/"]],
+    small:"Write a CALCULATE measure for year-to-date sales.",
+    big:"Build a KPI-card dashboard page with dynamic slicers/filters on a real dataset.",
+    interview:["Calculated column vs measure — what's the real difference?","Explain what CALCULATE does under the hood.","How would you build a YoY growth measure?"]},
+
+  {id:10, week:2, dow:"Wed", topic:"JSON — Nested Structures",
+    subtopics:["Flattening nested JSON","Parsing with Python"],
+    material:[["Real Python — Working with JSON","https://realpython.com/python-json/"]],
+    videos:[["freeCodeCamp — API & JSON parsing","https://www.youtube.com/results?search_query=freecodecamp+parsing+json+api"]],
+    flashcards:[["Quizlet — \"Nested JSON\"","https://quizlet.com/subject/json/"]],
+    small:"Flatten a small nested JSON object into a clean pandas DataFrame.",
+    big:"Pull a real API's nested response and normalize it into two related, clean tables.",
+    interview:["How do you handle deeply nested JSON in Python?","What's the difference between json.loads and json.load?"]},
+
+  {id:11, week:2, dow:"Thu", topic:"Python — Merging & Cleaning",
+    subtopics:["pd.merge","Missing value strategies","Multi-source cleaning"],
+    material:[["Kaggle Learn — Data Cleaning","https://www.kaggle.com/learn/data-cleaning"]],
+    videos:[["Keith Galli — data cleaning in pandas","https://www.youtube.com/@KeithGalli"]],
+    flashcards:[["Anki — \"pandas merge/join\" deck","https://ankiweb.net/shared/decks"]],
+    small:"Merge two tables on a shared key using pd.merge and check for row-count mismatches.",
+    big:"Merge three messy sources into one clean master table, documenting every join decision.",
+    interview:["Difference between merge, join, and concat in pandas.","How do you decide between an inner and outer merge?"]},
+
+  {id:12, week:2, dow:"Fri", topic:"Statistics — Probability & Correlation",
+    subtopics:["Probability distributions","Correlation","p-values in context"],
+    material:[["Khan Academy — Probability","https://www.khanacademy.org/math/statistics-probability/probability-library"]],
+    videos:[["StatQuest — Correlation & R-squared","https://www.youtube.com/@statquest"]],
+    flashcards:[["Quizlet — \"Probability & Correlation\"","https://quizlet.com/subject/probability/"]],
+    small:"Compute a correlation matrix on a real dataset and flag the strongest relationships.",
+    big:"Investigate a spurious correlation in real data and explain in a short write-up why it's misleading.",
+    interview:["Correlation vs causation — give a concrete example.","Explain a p-value in a business context, not a stats-class one."]},
+
+  {id:13, week:2, dow:"Sat", topic:"Project — Exploratory Data Analysis Notebook",
+    subtopics:["Nulls & distributions","RFM or churn framing"],
+    material:[["Kaggle — public EDA notebooks","https://www.kaggle.com/code"]],
+    videos:[["Rob Mulla — EDA walkthroughs","https://www.youtube.com/@robmulla"]],
+    small:"Build a basic EDA notebook checking nulls, dtypes, and value distributions.",
+    big:"Portfolio Project 2: full RFM customer segmentation or SaaS churn EDA notebook with Pandas + Matplotlib/Seaborn.",
+    interview:["Walk me through your EDA process step by step.","What's the first thing you check when you open a new dataset?"]},
+
+  {id:14, week:2, dow:"Sun", topic:"Interview Masterclass — SQL Technical Screen",
+    subtopics:["Timed SQL problem-solving","Live debugging"],
+    material:[["DataLemur — free SQL & data interview questions","https://datalemur.com/"]],
+    videos:[["Alex The Analyst — mock SQL interview","https://www.youtube.com/@AlexTheAnalyst"]],
+    small:"Solve five DataLemur \"easy\" SQL questions against the clock.",
+    big:"Run a timed 45-minute mock SQL technical screen, then review every mistake.",
+    interview:["Live-debug: this query with a GROUP BY is throwing an error — find it.","How would you optimize a slow query on a large table?"]},
+
+  {id:15, week:3, dow:"Mon", topic:"SQL — Window Functions",
+    subtopics:["ROW_NUMBER","RANK","LEAD / LAG"],
+    material:[["Mode Analytics — SQL Window Functions","https://mode.com/sql-tutorial/sql-window-functions/"]],
+    videos:[["Alex The Analyst — window functions explained","https://www.youtube.com/@AlexTheAnalyst"]],
+    flashcards:[["Anki — \"SQL Window Functions\" deck","https://ankiweb.net/shared/decks"]],
+    small:"Use ROW_NUMBER() to de-duplicate rows within groups.",
+    big:"Use RANK/LEAD/LAG to build a cohort-retention or leaderboard-style query.",
+    interview:["RANK vs DENSE_RANK vs ROW_NUMBER — what's the difference?","How would you compute month-over-month change using LAG?"]},
+
+  {id:16, week:3, dow:"Tue", topic:"Dashboard Storytelling & Layout",
+    subtopics:["Business storytelling rules","Interactive layout design"],
+    material:[["storytellingwithdata.com — blog","https://www.storytellingwithdata.com/blog"]],
+    videos:[["Cole Nussbaumer Knaflic — talks","https://www.youtube.com/results?search_query=cole+nussbaumer+knaflic"]],
+    flashcards:[["Quizlet — \"Dashboard Design Principles\"","https://quizlet.com/subject/data-visualization/"]],
+    small:"Redesign a cluttered dashboard mock-up, cutting at least three unnecessary elements.",
+    big:"Finalize the layout for Portfolio Project 3 — the interactive BI dashboard.",
+    interview:["How do you decide which chart type fits a given metric?","How do you design a dashboard for a non-technical manager?"]},
+
+  {id:17, week:3, dow:"Wed", topic:"Web Scraping Basics",
+    subtopics:["Extracting tabular data from web pages"],
+    material:[["Real Python — Beautiful Soup guide","https://realpython.com/beautiful-soup-web-scraper-python/"]],
+    videos:[["freeCodeCamp — web scraping crash course","https://www.youtube.com/results?search_query=freecodecamp+web+scraping+python"]],
+    flashcards:[["Anki — \"BeautifulSoup basics\" deck","https://ankiweb.net/shared/decks"]],
+    small:"Scrape a simple public HTML table into a pandas DataFrame.",
+    big:"Scrape and clean a multi-page dataset, then run a short analysis on it.",
+    interview:["What are the ethical/legal considerations of web scraping?","How would you handle a site's rate limiting?"]},
+
+  {id:18, week:3, dow:"Thu", topic:"Visualization — Matplotlib & Seaborn",
+    subtopics:["Distributions","Trend lines","Chart selection"],
+    material:[["Kaggle Learn — Data Visualization","https://www.kaggle.com/learn/data-visualization"]],
+    videos:[["Keith Galli — Matplotlib & Seaborn tutorial","https://www.youtube.com/@KeithGalli"]],
+    flashcards:[["Quizlet — \"Matplotlib functions\"","https://quizlet.com/subject/matplotlib/"]],
+    small:"Plot a distribution histogram and a trend line for one variable.",
+    big:"Build the full chart suite (histograms, boxplots, heatmap) for Portfolio Project 2's EDA.",
+    interview:["When would you use a boxplot instead of a histogram?","How do you choose colors/labels so a non-technical viewer understands a chart fast?"]},
+
+  {id:19, week:3, dow:"Fri", topic:"A/B Testing Fundamentals",
+    subtopics:["Test design","Significance","Metric tracking"],
+    material:[["Khan Academy — Hypothesis testing","https://www.khanacademy.org/math/statistics-probability/significance-tests-one-sample"]],
+    videos:[["StatQuest — A/B testing concepts","https://www.youtube.com/@statquest"]],
+    flashcards:[["Quizlet — \"A/B Testing Metrics\"","https://quizlet.com/subject/ab-testing/"]],
+    small:"Design an A/B test plan for a hypothetical feature change (hypothesis, metric, sample).",
+    big:"Analyze a sample A/B test dataset in Python and report whether the result is statistically significant.",
+    interview:["How do you determine sample size for an A/B test?","What's a common pitfall when reading A/B test results early?"]},
+
+  {id:20, week:3, dow:"Sat", topic:"Capstone — Portfolio Finalization",
+    subtopics:["README structure","GitHub / Tableau Public hosting"],
+    material:[["GitHub Docs — About READMEs","https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-readmes"],["Tableau Public","https://public.tableau.com/"]],
+    videos:[["Alex The Analyst — portfolio review video","https://www.youtube.com/@AlexTheAnalyst"]],
+    small:"Write a clear README for one project, leading with the business problem in two sentences.",
+    big:"Publish all three portfolio projects to GitHub and/or Tableau Public with clean folder structure.",
+    interview:["Walk me through how you'd present this project in an interview in under two minutes.","Why did you choose this dataset and this approach?"]},
+
+  {id:21, week:3, dow:"Sun", topic:"Interview Masterclass — Business Case Studies",
+    subtopics:["Metrics-drop case questions","Structured problem solving"],
+    material:[["Interview Query — case study bank","https://www.interviewquery.com/"]],
+    videos:[["Interview Query — business case walkthroughs","https://www.youtube.com/@interviewquery"]],
+    flashcards:[["Quizlet — \"Business Case Metrics\"","https://quizlet.com/subject/business-metrics/"]],
+    small:"Draft a structured framework for \"why did revenue drop 15%?\" (hypotheses, data to check, next steps).",
+    big:"Run a full mock case interview end-to-end using a metrics-tree structure and a STAR-style wrap-up.",
+    interview:["Our key engagement metric dropped 15% month-over-month — how do you investigate?","How do you prioritize which hypothesis to check first?"]},
+];
+
+const PORTFOLIO = [
+  {id:"p1", num:"01", title:"SQL Revenue & Cohort Analysis",
+    desc:"A deep dive into a real multi-table database to answer core business questions: monthly revenue trends, customer retention, and segment valuation. Demonstrates JOINs, aggregations, CTEs, and window functions.",
+    material:[["Kaggle — \"Online Retail\" dataset","https://www.kaggle.com/datasets/vijayuv/onlineretail"],["Mode Analytics SQL Tutorial","https://mode.com/sql-tutorial/"]],
+    videos:[["Alex The Analyst — SQL project walkthrough","https://www.youtube.com/@AlexTheAnalyst"]],
+    interview:["Talk me through how you defined a \"retained\" customer in your cohort model.","Why CTEs instead of nested subqueries here?"]},
+  {id:"p2", num:"02", title:"Python Exploratory Data Analysis",
+    desc:"A data-cleaning and statistical-exploration project built with Pandas and Matplotlib/Seaborn. Common framings: RFM customer segmentation, SaaS churn analysis, or marketing-channel performance.",
+    material:[["Kaggle Learn — Pandas","https://www.kaggle.com/learn/pandas"],["Kaggle — public EDA notebooks","https://www.kaggle.com/code"]],
+    videos:[["Rob Mulla — EDA walkthroughs","https://www.youtube.com/@robmulla"]],
+    interview:["Walk me through your EDA process on this dataset.","What did you do with outliers and why?"]},
+  {id:"p3", num:"03", title:"Interactive BI Dashboard",
+    desc:"An executive dashboard in Power BI, Tableau, or Excel with KPIs, trend lines, and dynamic filtering — proving you can turn numbers into a story for non-technical managers.",
+    material:[["Microsoft Learn — Power BI path","https://learn.microsoft.com/en-us/training/powerplatform/power-bi"],["Tableau Public — free gallery & hosting","https://public.tableau.com/"]],
+    videos:[["Guy in a Cube — Power BI channel","https://www.youtube.com/@GuyInACube"]],
+    interview:["Why did you choose these KPIs for this audience?","How would you extend this dashboard for a different stakeholder?"]},
+];
+
+/* ---------------- State ---------------- */
+const STORAGE_KEY = "dat_tracker_progress_v1";
+let state = {done:{}, pf:{}};
+try{
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if(raw) state = JSON.parse(raw);
+}catch(e){ /* fresh start if storage is unavailable */ }
+if(!state.done) state.done = {};
+if(!state.pf) state.pf = {};
+
+let currentDay = DAYS.find(d => !state.done[d.id]) ? DAYS.find(d => !state.done[d.id]).id : 1;
+
+function save(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+  catch(e){ /* storage unavailable — progress just won't persist */ }
+}
+
+/* ---------------- Render: sidebar ---------------- */
+function renderSidebar(){
+  const el = document.getElementById("sidebar");
+  el.innerHTML = "";
+  [1,2,3].forEach(w=>{
+    const group = document.createElement("div");
+    group.className = "week-group";
+    const lbl = document.createElement("div");
+    lbl.className = "week-label";
+    lbl.textContent = "WEEK " + w;
+    group.appendChild(lbl);
+    DAYS.filter(d=>d.week===w).forEach(d=>{
+      const row = document.createElement("div");
+      row.className = "day-row" + (d.id===currentDay ? " active":"") + (state.done[d.id] ? " done":"");
+      row.innerHTML = `
+        <span class="chk ${state.done[d.id]?'done':''}">${state.done[d.id]?'✓':''}</span>
+        <span class="num">${String(d.id).padStart(2,'0')}</span>
+        <span class="label">${d.dow} · ${d.topic.split('—')[0].trim()}</span>
+      `;
+      row.addEventListener("click", ()=>{ currentDay = d.id; renderAll(); });
+      group.appendChild(row);
+    });
+    el.appendChild(group);
+  });
+}
+
+/* ---------------- Render: main day panel ---------------- */
+function renderMain(){
+  const d = DAYS.find(x=>x.id===currentDay);
+  const el = document.getElementById("main");
+  const isDone = !!state.done[d.id];
+
+  const linkList = (items) => items.map(([name,url])=>`<li><a href="${url}" target="_blank" rel="noopener">${name}</a></li>`).join("");
+  const qaList = (items) => items.map((q,i)=>`<li><span class="qnum">Q${i+1}</span><span>${q}</span></li>`).join("");
+  const subtopicSpans = d.subtopics.map(s=>`<span>${s}</span>`).join("");
+
+  el.innerHTML = `
+    <div class="main-head">
+      <div>
+        <div class="meta">WEEK ${d.week} · DAY ${String(d.id).padStart(2,'0')} · ${d.dow.toUpperCase()}</div>
+        <h2>${d.topic}</h2>
+      </div>
+      <button class="complete-toggle ${isDone?'done':''}" id="completeBtn">
+        <span class="box">${isDone?'✓':''}</span>
+        ${isDone ? 'Marked complete' : 'Mark day complete'}
+      </button>
+    </div>
+
+    <div class="topics-line">${subtopicSpans}</div>
+
+    <div class="section">
+      <h3>FREE STUDY MATERIAL</h3>
+      <ul class="link-list">${linkList(d.material)}</ul>
+    </div>
+
+    <div class="section">
+      <h3>VIDEOS</h3>
+      <ul class="link-list">${linkList(d.videos)}</ul>
+    </div>
+
+    ${d.flashcards ? `
+    <div class="section">
+      <h3>FLASHCARDS</h3>
+      <ul class="link-list">${linkList(d.flashcards)}</ul>
+    </div>` : ``}
+
+    <div class="section">
+      <h3>PROJECTS</h3>
+      <div class="split-2">
+        <div class="proj-card small">
+          <span class="tag">SMALL PRACTICE</span>
+          <p>${d.small}</p>
+        </div>
+        <div class="proj-card big">
+          <span class="tag">REAL-WORLD / PORTFOLIO</span>
+          <p>${d.big}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>INTERVIEW QUESTIONS — ${d.topic.split('—')[0].trim().toUpperCase()}</h3>
+      <ul class="qa-list">${qaList(d.interview)}</ul>
+    </div>
+
+    <div class="nav-buttons">
+      <button id="prevBtn" ${d.id===1?'disabled':''}>&larr; previous day</button>
+      <button id="nextBtn" ${d.id===21?'disabled':''}>next day &rarr;</button>
+    </div>
+  `;
+
+  document.getElementById("completeBtn").addEventListener("click", ()=>{
+    if(state.done[d.id]) delete state.done[d.id];
+    else state.done[d.id] = true;
+    save();
+    renderAll();
+  });
+  const prevBtn = document.getElementById("prevBtn");
+  const nextBtn = document.getElementById("nextBtn");
+  if(prevBtn) prevBtn.addEventListener("click", ()=>{ if(d.id>1){ currentDay=d.id-1; renderAll(); }});
+  if(nextBtn) nextBtn.addEventListener("click", ()=>{ if(d.id<21){ currentDay=d.id+1; renderAll(); }});
+}
+
+/* ---------------- Render: progress bar ---------------- */
+function renderProgress(){
+  const doneCount = Object.keys(state.done).length;
+  document.getElementById("progressCount").textContent = doneCount + " / 21";
+  document.getElementById("barFill").style.width = ((doneCount/21)*100) + "%";
+}
+
+/* ---------------- Render: portfolio view ---------------- */
+function renderPortfolio(){
+  const el = document.getElementById("portfolioGrid");
+  el.innerHTML = PORTFOLIO.map(p=>{
+    const isDone = !!state.pf[p.id];
+    const linkList = (items) => items.map(([name,url])=>`<li><a href="${url}" target="_blank" rel="noopener">${name}</a></li>`).join("");
+    const qaList = (items) => items.map((q,i)=>`<li><span class="qnum">Q${i+1}</span><span>${q}</span></li>`).join("");
+    return `
+      <div class="pf-card">
+        <div class="pf-num">PROJECT ${p.num}</div>
+        <h3>${p.title}</h3>
+        <p>${p.desc}</p>
+        <div class="section">
+          <h4>FREE RESOURCES</h4>
+          <ul class="link-list">${linkList(p.material)}</ul>
+        </div>
+        <div class="section">
+          <h4>VIDEOS</h4>
+          <ul class="link-list">${linkList(p.videos)}</ul>
+        </div>
+        <div class="section">
+          <h4>INTERVIEW QUESTIONS</h4>
+          <ul class="qa-list">${qaList(p.interview)}</ul>
+        </div>
+        <button class="pf-toggle ${isDone?'done':''}" data-id="${p.id}">
+          <span class="box">${isDone?'✓':''}</span>
+          ${isDone ? 'Project marked complete' : 'Mark project complete'}
+        </button>
+      </div>
+    `;
+  }).join("");
+  el.querySelectorAll(".pf-toggle").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const id = btn.getAttribute("data-id");
+      if(state.pf[id]) delete state.pf[id];
+      else state.pf[id] = true;
+      save();
+      renderPortfolio();
+    });
+  });
+}
+
+/* ---------------- Reset ---------------- */
+document.getElementById("resetBtn").addEventListener("click", ()=>{
+  if(confirm("Clear all saved progress on this device?")){
+    state = {done:{}, pf:{}};
+    save();
+    renderAll();
+    renderPortfolio();
+  }
+});
+
+/* ---------------- Tabs ---------------- */
+document.getElementById("tabTrack").addEventListener("click", ()=>{
+  document.getElementById("tabTrack").classList.add("active");
+  document.getElementById("tabPortfolio").classList.remove("active");
+  document.getElementById("trackView").style.display = "grid";
+  document.getElementById("portfolioView").style.display = "none";
+});
+document.getElementById("tabPortfolio").addEventListener("click", ()=>{
+  document.getElementById("tabPortfolio").classList.add("active");
+  document.getElementById("tabTrack").classList.remove("active");
+  document.getElementById("trackView").style.display = "none";
+  document.getElementById("portfolioView").style.display = "block";
+});
+
+function renderAll(){
+  renderSidebar();
+  renderMain();
+  renderProgress();
+}
+
+renderAll();
+renderPortfolio();
+</script>
+</body>
+</html>

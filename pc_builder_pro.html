@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PC Builder Pro - Interactive Rig Customizer</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            900: '#14532d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
+
+    <!-- Header / Navbar -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-emerald-400 flex items-center justify-center shadow-lg shadow-brand-500/20">
+                    <i class="fa-solid fa-microchip text-white text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg tracking-tight bg-gradient-to-r from-white via-slate-200 to-brand-400 bg-clip-text text-transparent">PC Builder Pro</h1>
+                    <p class="text-xs text-slate-400">Interactive Custom Rig Configurator</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button onclick="app.resetBuild()" class="px-3 py-2 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition border border-slate-700 flex items-center space-x-1.5">
+                    <i class="fa-solid fa-rotate-right"></i>
+                    <span>Reset Build</span>
+                </button>
+                <button onclick="app.shareBuild()" class="px-3 py-2 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition border border-slate-700 flex items-center space-x-1.5">
+                    <i class="fa-solid fa-share-nodes"></i>
+                    <span>Export Spec</span>
+                </button>
+                <button onclick="app.checkout()" class="px-4 py-2 text-xs font-semibold bg-brand-600 hover:bg-brand-500 text-white rounded-lg transition shadow-lg shadow-brand-600/30 flex items-center space-x-1.5">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                    <span>Order Build</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Left Column: Component Picker Categories -->
+        <section class="lg:col-span-8 space-y-4">
+            <div class="flex items-center justify-between">
+                <h2 class="text-xl font-bold text-white flex items-center space-x-2">
+                    <i class="fa-solid fa-list-check text-brand-500"></i>
+                    <span>System Components</span>
+                </h2>
+                <span id="selectedCount" class="text-xs font-medium bg-slate-800 text-slate-300 px-3 py-1 rounded-full border border-slate-700">0 / 7 Selected</span>
+            </div>
+
+            <!-- Categories Container -->
+            <div id="categoryList" class="space-y-3">
+                <!-- Injected via JavaScript -->
+            </div>
+        </section>
+
+        <!-- Right Column: System Summary, Specs & Compatibility -->
+        <aside class="lg:col-span-4 space-y-6">
+            <!-- Summary Card -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl sticky top-24">
+                <h3 class="text-lg font-bold text-white mb-4 flex items-center justify-between">
+                    <span>Rig Summary</span>
+                    <span id="summaryTotal" class="text-brand-400 text-2xl font-extrabold">$0.00</span>
+                </h3>
+
+                <!-- Power & Performance Meters -->
+                <div class="space-y-4 py-4 border-y border-slate-800 mb-6">
+                    <div>
+                        <div class="flex justify-between text-xs font-medium mb-1.5">
+                            <span class="text-slate-400 flex items-center space-x-1"><i class="fa-solid fa-bolt text-amber-400"></i><span>Est. Wattage</span></span>
+                            <span id="wattageVal" class="text-slate-200 font-semibold">0W / 650W PSU</span>
+                        </div>
+                        <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                            <div id="wattageBar" class="bg-gradient-to-r from-brand-500 to-amber-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between text-xs font-medium mb-1.5">
+                            <span class="text-slate-400 flex items-center space-x-1"><i class="fa-solid fa-gauge-high text-indigo-400"></i><span>Bottleneck Index</span></span>
+                            <span id="bottleneckVal" class="text-emerald-400 font-semibold">Balanced Rig</span>
+                        </div>
+                        <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                            <div id="bottleneckBar" class="bg-indigo-500 h-2 rounded-full transition-all duration-500" style="width: 10%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Compatibility & Alerts -->
+                <div class="mb-6">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center space-x-1.5">
+                        <i class="fa-solid fa-shield-halved text-brand-500"></i>
+                        <span>Compatibility Diagnostics</span>
+                    </h4>
+                    <div id="alertsContainer" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                        <!-- Injected via JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Action Button -->
+                <button onclick="app.checkout()" class="w-full py-3 bg-gradient-to-r from-brand-600 to-emerald-500 hover:from-brand-500 hover:to-emerald-400 text-white font-semibold rounded-xl shadow-lg shadow-brand-600/30 transition flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <span>Finalize & Review Build</span>
+                </button>
+            </div>
+        </aside>
+    </main>
+
+    <!-- Modal for Component Selection -->
+    <div id="partModal" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <!-- Modal Header -->
+            <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/50">
+                <div class="flex items-center space-x-3">
+                    <div id="modalCategoryIcon" class="w-9 h-9 rounded-lg bg-brand-500/10 text-brand-400 flex items-center justify-center text-lg"></div>
+                    <div>
+                        <h3 id="modalTitle" class="font-bold text-white text-lg">Select Component</h3>
+                        <p id="modalSubtitle" class="text-xs text-slate-400">Choose from top tier tested parts</p>
+                    </div>
+                </div>
+                <button onclick="app.closeModal()" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Modal Search & Filters -->
+            <div class="p-4 border-b border-slate-800 bg-slate-950/40">
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-500 text-sm"></i>
+                    <input type="text" id="modalSearch" oninput="app.filterModalParts(this.value)" placeholder="Search model, brand, or specs..." class="w-full bg-slate-900 border border-slate-800 rounded-xl pl-10 pr-4 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-brand-500 transition">
+                </div>
+            </div>
+
+            <!-- Modal Parts List -->
+            <div id="modalPartsList" class="p-4 overflow-y-auto space-y-3 flex-1">
+                <!-- Injected via JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification / Toast Box -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-900 border border-slate-700 text-slate-200 px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-brand-400 text-lg"></i>
+        <span id="toastMessage" class="text-sm font-medium">Notification message</span>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // Catalog Data of PC Components
+        const CATALOG = {
+            cpu: [
+                { id: 'cpu_1', name: 'Intel Core i5-13600K', brand: 'Intel', price: 299, socket: 'LGA1700', wattage: 125, specs: '14 Cores, 5.1 GHz', tier: 8 },
+                { id: 'cpu_2', name: 'Intel Core i7-13700K', brand: 'Intel', price: 389, socket: 'LGA1700', wattage: 150, specs: '16 Cores, 5.4 GHz', tier: 9 },
+                { id: 'cpu_3', name: 'AMD Ryzen 5 7600X', brand: 'AMD', price: 229, socket: 'AM5', wattage: 105, specs: '6 Cores, 4.7 GHz', tier: 7 },
+                { id: 'cpu_4', name: 'AMD Ryzen 7 7800X3D', brand: 'AMD', price: 399, socket: 'AM5', wattage: 120, specs: '8 Cores, 5.0 GHz (Best Gaming)', tier: 10 },
+                { id: 'cpu_5', name: 'Intel Core i9-14900KS', brand: 'Intel', price: 689, socket: 'LGA1700', wattage: 250, specs: '24 Cores, 6.2 GHz', tier: 10 }
+            ],
+            motherboard: [
+                { id: 'mb_1', name: 'ASUS ROG STRIX Z790-E', brand: 'ASUS', price: 349, socket: 'LGA1700', memory: 'DDR5', specs: 'ATX, Wi-Fi 6E, PCIe 5.0', tier: 9 },
+                { id: 'mb_2', name: 'MSI PRO B760M-P', brand: 'MSI', price: 119, socket: 'LGA1700', memory: 'DDR4', specs: 'mATX, DDR4 Support', tier: 5 },
+                { id: 'mb_3', name: 'Gigabyte B650 AORUS ELITE AX', brand: 'Gigabyte', price: 219, socket: 'AM5', memory: 'DDR5', specs: 'ATX, AM5 Socket, PCIe 4.0', tier: 8 },
+                { id: 'mb_4', name: 'ASRock X670E Taichi', brand: 'ASRock', price: 479, socket: 'AM5', memory: 'DDR5', specs: 'Extended ATX, Flagship VRM', tier: 10 }
+            ],
+            ram: [
+                { id: 'ram_1', name: 'Corsair Vengeance 16GB (2x8) DDR4', brand: 'Corsair', price: 54, type: 'DDR4', wattage: 10, specs: '3200MHz CL16', tier: 5 },
+                { id: 'ram_2', name: 'G.SKILL Trident Z5 RGB 32GB DDR5', brand: 'G.SKILL', price: 119, type: 'DDR5', wattage: 15, specs: '6000MHz CL30 (Optimal)', tier: 9 },
+                { id: 'ram_3', name: 'Kingston Fury Beast 64GB DDR5', brand: 'Kingston', price: 199, type: 'DDR5', wattage: 20, specs: '5600MHz CL36 Kit', tier: 9 }
+            ],
+            gpu: [
+                { id: 'gpu_1', name: 'NVIDIA GeForce RTX 4060 8GB', brand: 'NVIDIA', price: 299, wattage: 115, lengthMm: 242, specs: 'Great 1080p / DLSS 3', tier: 6 },
+                { id: 'gpu_2', name: 'NVIDIA GeForce RTX 4070 Super 12GB', brand: 'NVIDIA', price: 599, wattage: 220, lengthMm: 242, specs: 'Exceptional 1440p Gaming', tier: 8 },
+                { id: 'gpu_3', name: 'NVIDIA GeForce RTX 4090 24GB', brand: 'NVIDIA', price: 1799, wattage: 450, lengthMm: 336, specs: 'Ultimate 4K Powerhouse', tier: 10 },
+                { id: 'gpu_4', name: 'AMD Radeon RX 7800 XT 16GB', brand: 'AMD', price: 499, wattage: 263, lengthMm: 267, specs: 'High VRAM 1440p Value', tier: 8 }
+            ],
+            storage: [
+                { id: 'st_1', name: 'Samsung 980 PRO 1TB NVMe SSD', brand: 'Samsung', price: 89, wattage: 7, specs: '7000 MB/s Read', tier: 8 },
+                { id: 'st_2', name: 'WD Black SN850X 2TB NVMe SSD', brand: 'Western Digital', price: 149, wattage: 9, specs: '7300 MB/s High Speed', tier: 9 },
+                { id: 'st_3', name: 'Crucial P3 1TB NVMe SSD', brand: 'Crucial', price: 59, wattage: 5, specs: 'Budget Gen3 NVMe', tier: 5 }
+            ],
+            psu: [
+                { id: 'psu_1', name: 'Corsair RM750e 750W 80+ Gold', brand: 'Corsair', price: 99, wattageCapacity: 750, specs: 'Fully Modular, ATX 3.0', tier: 8 },
+                { id: 'psu_2', name: 'Seasonic Focus GX-850 850W', brand: 'Seasonic', price: 129, wattageCapacity: 850, specs: '80+ Gold Certified', tier: 9 },
+                { id: 'psu_3', name: 'EVGA 500 W1 500W 80+', brand: 'EVGA', price: 49, wattageCapacity: 500, specs: 'Entry Level Non-Modular', tier: 4 },
+                { id: 'psu_4', name: 'MSI MEG Ai1300P 1300W', brand: 'MSI', price: 329, wattageCapacity: 1300, specs: 'Titanium PCIe 5.0 Flagship', tier: 10 }
+            ],
+            case: [
+                { id: 'case_1', name: 'NZXT H5 Flow RGB', brand: 'NZXT', price: 94, maxGpuLen: 365, specs: 'Mid Tower, High Airflow', tier: 8 },
+                { id: 'case_2', name: 'Corsair 4000D Airflow', brand: 'Corsair', price: 89, maxGpuLen: 360, specs: 'Classic Cable Management', tier: 8 },
+                { id: 'case_3', name: 'Lian Li O11 Dynamic EVO', brand: 'Lian Li', price: 149, maxGpuLen: 422, specs: 'Dual Chamber Glass Display', tier: 9 }
+            ]
+        };
+
+        const CATEGORY_META = {
+            cpu: { title: 'Processor (CPU)', icon: 'fa-microchip', desc: 'Central processing unit for compute power' },
+            motherboard: { title: 'Motherboard', icon: 'fa-chess-board', desc: 'Central circuit board connecting all parts' },
+            ram: { title: 'Memory (RAM)', icon: 'fa-memory', desc: 'High-speed system volatile memory' },
+            gpu: { title: 'Graphics Card (GPU)', icon: 'fa-display', desc: 'Dedicated video processor for rendering & gaming' },
+            storage: { title: 'Storage (SSD / HDD)', icon: 'fa-hard-drive', desc: 'Fast solid-state drive for OS and games' },
+            psu: { title: 'Power Supply (PSU)', icon: 'fa-bolt', desc: 'Clean, reliable electrical power unit' },
+            case: { title: 'Chassis (PC Case)', icon: 'fa-box', desc: 'Enclosure protecting and cooling internal hardware' }
+        };
+
+        // Application State
+        let currentBuild = {
+            cpu: null,
+            motherboard: null,
+            ram: null,
+            gpu: null,
+            storage: null,
+            psu: null,
+            case: null
+        };
+
+        let activeModalCategory = null;
+
+        const app = {
+            init() {
+                this.renderCategories();
+                this.updateSummary();
+            },
+
+            renderCategories() {
+                const container = document.getElementById('categoryList');
+                container.innerHTML = '';
+
+                let selectedCount = 0;
+
+                Object.keys(CATEGORY_META).forEach(catKey => {
+                    const meta = CATEGORY_META[catKey];
+                    const selectedPart = currentBuild[catKey];
+                    if (selectedPart) selectedCount++;
+
+                    const card = document.createElement('div');
+                    card.className = `bg-slate-900 border ${selectedPart ? 'border-brand-500/50 bg-slate-900/90' : 'border-slate-800 hover:border-slate-700'} rounded-2xl p-5 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg`;
+                    
+                    card.innerHTML = `
+                        <div class="flex items-center space-x-4">
+                            <div class="w-12 h-12 rounded-xl ${selectedPart ? 'bg-brand-500/20 text-brand-400' : 'bg-slate-800 text-slate-400'} flex items-center justify-center text-xl shrink-0">
+                                <i class="fa-solid ${meta.icon}"></i>
+                            </div>
+                            <div>
+                                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">${meta.title}</span>
+                                <h4 class="text-base font-bold text-white mt-0.5">${selectedPart ? selectedPart.name : 'Not Selected'}</h4>
+                                <p class="text-xs text-slate-400 mt-0.5">${selectedPart ? (selectedPart.specs + ' • $' + selectedPart.price) : meta.desc}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2 w-full sm:w-auto justify-end">
+                            ${selectedPart ? `
+                                <button onclick="app.removePart('${catKey}')" class="px-3 py-2 text-xs font-medium bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-xl transition border border-rose-500/20 flex items-center space-x-1">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                    <span>Remove</span>
+                                </button>
+                            ` : ''}
+                            <button onclick="app.openModal('${catKey}')" class="px-4 py-2 text-xs font-semibold ${selectedPart ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700' : 'bg-brand-600 hover:bg-brand-500 text-white shadow-md shadow-brand-600/30'} rounded-xl transition flex items-center space-x-1.5">
+                                <i class="fa-solid ${selectedPart ? 'fa-pen-to-square' : 'fa-plus'}"></i>
+                                <span>${selectedPart ? 'Change' : 'Choose Part'}</span>
+                            </button>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+
+                document.getElementById('selectedCount').innerText = `${selectedCount} / 7 Selected`;
+            },
+
+            openModal(categoryKey) {
+                activeModalCategory = categoryKey;
+                const meta = CATEGORY_META[categoryKey];
+                document.getElementById('modalTitle').innerText = `Select ${meta.title}`;
+                document.getElementById('modalSubtitle').innerText = meta.desc;
+                document.getElementById('modalCategoryIcon').innerHTML = `<i class="fa-solid ${meta.icon}"></i>`;
+                document.getElementById('modalSearch').value = '';
+                
+                this.renderModalParts(CATALOG[categoryKey]);
+                document.getElementById('partModal').classList.remove('hidden');
+            },
+
+            closeModal() {
+                document.getElementById('partModal').classList.add('hidden');
+                activeModalCategory = null;
+            },
+
+            filterModalParts(query) {
+                if (!activeModalCategory) return;
+                const parts = CATALOG[activeModalCategory];
+                const q = query.toLowerCase();
+                const filtered = parts.filter(p => p.name.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q) || p.specs.toLowerCase().includes(q));
+                this.renderModalParts(filtered);
+            },
+
+            renderModalParts(parts) {
+                const listEl = document.getElementById('modalPartsList');
+                listEl.innerHTML = '';
+
+                if (parts.length === 0) {
+                    listEl.innerHTML = `<div class="text-center py-10 text-slate-500 text-sm">No compatible or matching components found.</div>`;
+                    return;
+                }
+
+                parts.forEach(part => {
+                    const isSelected = currentBuild[activeModalCategory]?.id === part.id;
+                    const item = document.createElement('div');
+                    item.className = `bg-slate-950/60 border ${isSelected ? 'border-brand-500 bg-brand-500/5' : 'border-slate-800 hover:border-slate-700'} rounded-xl p-4 transition flex items-center justify-between gap-4`;
+                    
+                    item.innerHTML = `
+                        <div>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-xs font-semibold px-2 py-0.5 bg-slate-800 text-slate-300 rounded">${part.brand}</span>
+                                ${isSelected ? '<span class="text-xs font-semibold px-2 py-0.5 bg-brand-500/20 text-brand-400 rounded">Selected</span>' : ''}
+                            </div>
+                            <h4 class="text-sm font-bold text-white mt-1.5">${part.name}</h4>
+                            <p class="text-xs text-slate-400 mt-1">${part.specs}</p>
+                        </div>
+                        <div class="flex items-center space-x-4 shrink-0">
+                            <span class="text-base font-extrabold text-brand-400">$${part.price}</span>
+                            <button onclick="app.selectPart('${activeModalCategory}', '${part.id}')" class="px-4 py-2 text-xs font-semibold ${isSelected ? 'bg-slate-800 text-slate-300' : 'bg-brand-600 hover:bg-brand-500 text-white'} rounded-lg transition shadow">
+                                ${isSelected ? 'Selected' : 'Select'}
+                            </button>
+                        </div>
+                    `;
+                    listEl.appendChild(item);
+                });
+            },
+
+            selectPart(categoryKey, partId) {
+                const part = CATALOG[categoryKey].find(p => p.id === partId);
+                currentBuild[categoryKey] = part;
+                this.closeModal();
+                this.renderCategories();
+                this.updateSummary();
+                this.showToast(`Added ${part.name} to build!`);
+            },
+
+            removePart(categoryKey) {
+                const partName = currentBuild[categoryKey]?.name || 'Component';
+                currentBuild[categoryKey] = null;
+                this.renderCategories();
+                this.updateSummary();
+                this.showToast(`Removed ${partName} from build.`, 'warning');
+            },
+
+            resetBuild() {
+                currentBuild = { cpu: null, motherboard: null, ram: null, gpu: null, storage: null, psu: null, case: null };
+                this.renderCategories();
+                this.updateSummary();
+                this.showToast('Build reset successfully.', 'warning');
+            },
+
+            updateSummary() {
+                // Calculate Total Price
+                let totalPrice = 0;
+                let totalWattage = 50; // Base system idle load
+                Object.values(currentBuild).forEach(part => {
+                    if (part) {
+                        totalPrice += part.price;
+                        if (part.wattage) totalWattage += part.wattage;
+                    }
+                });
+
+                document.getElementById('summaryTotal').innerText = `$${totalPrice.toLocaleString()}`;
+
+                // PSU Wattage limit
+                const psuCapacity = currentBuild.psu?.wattageCapacity || 650;
+                document.getElementById('wattageVal').innerText = `${totalWattage}W / ${psuCapacity}W PSU`;
+                const wattagePercent = Math.min(Math.round((totalWattage / psuCapacity) * 100), 100);
+                const wattageBar = document.getElementById('wattageBar');
+                wattageBar.style.width = `${wattagePercent}%`;
+                
+                if (totalWattage > psuCapacity) {
+                    wattageBar.className = 'bg-rose-500 h-2 rounded-full transition-all duration-500';
+                } else {
+                    wattageBar.className = 'bg-gradient-to-r from-brand-500 to-amber-500 h-2 rounded-full transition-all duration-500';
+                }
+
+                // Bottleneck Analysis
+                this.evaluateBottleneckAndCompatibility(totalWattage, psuCapacity);
+            },
+
+            evaluateBottleneckAndCompatibility(totalWattage, psuCapacity) {
+                const alertsContainer = document.getElementById('alertsContainer');
+                alertsContainer.innerHTML = '';
+                let alerts = [];
+
+                const cpu = currentBuild.cpu;
+                const mb = currentBuild.motherboard;
+                const ram = currentBuild.ram;
+                const gpu = currentBuild.gpu;
+                const psu = currentBuild.psu;
+                const pcCase = currentBuild.case;
+
+                // 1. Socket Check
+                if (cpu && mb) {
+                    if (cpu.socket !== mb.socket) {
+                        alerts.push({ type: 'error', text: `Socket Mismatch: ${cpu.name} (${cpu.socket}) is incompatible with ${mb.name} (${mb.socket}).` });
+                    } else {
+                        alerts.push({ type: 'success', text: `CPU socket matches motherboard (${cpu.socket}).` });
+                    }
+                }
+
+                // 2. RAM Generation Check
+                if (mb && ram) {
+                    if (mb.memory && !mb.memory.includes(ram.type)) {
+                        alerts.push({ type: 'error', text: `Memory Type Mismatch: Motherboard requires ${mb.memory}, but selected RAM is ${ram.type}.` });
+                    } else {
+                        alerts.push({ type: 'success', text: `RAM module type is compatible with motherboard.` });
+                    }
+                }
+
+                // 3. Power Supply Check
+                if (psu && totalWattage > psuCapacity) {
+                    alerts.push({ type: 'error', text: `Insufficient Power: Estimated system draw (${totalWattage}W) exceeds selected PSU capacity (${psuCapacity}W).` });
+                } else if (psu) {
+                    alerts.push({ type: 'success', text: `Power supply capacity (${psuCapacity}W) is sufficient for estimated draw (${totalWattage}W).` });
+                }
+
+                // 4. GPU Clearance in Case
+                if (gpu && pcCase) {
+                    if (gpu.lengthMm && pcCase.maxGpuLen && gpu.lengthMm > pcCase.maxGpuLen) {
+                        alerts.push({ type: 'warning', text: `GPU Clearance Warning: ${gpu.name} (${gpu.lengthMm}mm) may exceed max case clearance (${pcCase.maxGpuLen}mm).` });
+                    } else {
+                        alerts.push({ type: 'success', text: `GPU fits comfortably within the selected case.` });
+                    }
+                }
+
+                // Default empty state if no parts selected
+                if (alerts.length === 0) {
+                    alertsContainer.innerHTML = `<p class="text-xs text-slate-500 italic">Select key components (CPU, Motherboard, PSU) to run live compatibility diagnostics.</p>`;
+                } else {
+                    alerts.forEach(alert => {
+                        const div = document.createElement('div');
+                        let icon = 'fa-circle-check text-brand-400';
+                        let bg = 'bg-brand-500/10 border-brand-500/20 text-brand-300';
+                        if (alert.type === 'error') {
+                            icon = 'fa-triangle-exclamation text-rose-400';
+                            bg = 'bg-rose-500/10 border-rose-500/20 text-rose-300';
+                        } else if (alert.type === 'warning') {
+                            icon = 'fa-circle-exclamation text-amber-400';
+                            bg = 'bg-amber-500/10 border-amber-500/20 text-amber-300';
+                        }
+
+                        div.className = `p-3 rounded-xl border ${bg} text-xs flex items-start space-x-2.5`;
+                        div.innerHTML = `<i class="fa-solid ${icon} mt-0.5 text-sm shrink-0"></i><span class="leading-relaxed font-medium">${alert.text}</span>`;
+                        alertsContainer.appendChild(div);
+                    });
+                }
+
+                // Bottleneck calculation
+                const bottleneckBar = document.getElementById('bottleneckBar');
+                const bottleneckVal = document.getElementById('bottleneckVal');
+                if (cpu && gpu) {
+                    const diff = Math.abs(cpu.tier - gpu.tier);
+                    if (diff <= 1) {
+                        bottleneckVal.innerText = 'Balanced Rig (Optimal)';
+                        bottleneckVal.className = 'text-emerald-400 font-semibold';
+                        bottleneckBar.style.width = '15%';
+                        bottleneckBar.className = 'bg-emerald-500 h-2 rounded-full transition-all duration-500';
+                    } else if (cpu.tier > gpu.tier + 2) {
+                        bottleneckVal.innerText = 'GPU Bottleneck (Consider upgrading GPU)';
+                        bottleneckVal.className = 'text-amber-400 font-semibold';
+                        bottleneckBar.style.width = '70%';
+                        bottleneckBar.className = 'bg-amber-500 h-2 rounded-full transition-all duration-500';
+                    } else if (gpu.tier > cpu.tier + 2) {
+                        bottleneckVal.innerText = 'CPU Bottleneck (Consider upgrading CPU)';
+                        bottleneckVal.className = 'text-amber-400 font-semibold';
+                        bottleneckBar.style.width = '75%';
+                        bottleneckBar.className = 'bg-amber-500 h-2 rounded-full transition-all duration-500';
+                    } else {
+                        bottleneckVal.innerText = 'Good System Synergy';
+                        bottleneckVal.className = 'text-brand-400 font-semibold';
+                        bottleneckBar.style.width = '30%';
+                        bottleneckBar.className = 'bg-brand-500 h-2 rounded-full transition-all duration-500';
+                    }
+                } else {
+                    bottleneckVal.innerText = 'Awaiting CPU & GPU';
+                    bottleneckVal.className = 'text-slate-400 font-semibold';
+                    bottleneckBar.style.width = '10%';
+                    bottleneckBar.className = 'bg-indigo-500 h-2 rounded-full transition-all duration-500';
+                }
+            },
+
+            shareBuild() {
+                const partsList = Object.entries(currentBuild)
+                    .filter(([k, v]) => v !== null)
+                    .map(([k, v]) => `${k.toUpperCase()}: ${v.name} ($${v.price})`)
+                    .join('\n');
+                
+                if (!partsList) {
+                    this.showToast('Select at least one part to export spec.', 'warning');
+                    return;
+                }
+
+                const textToCopy = `My Custom PC Build Spec:\n${partsList}\nBuilt with PC Builder Pro.`;
+                
+                // Fallback copy method
+                const textarea = document.createElement('textarea');
+                textarea.value = textToCopy;
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    document.execCommand('copy');
+                    this.showToast('Build specification copied to clipboard!');
+                } catch (err) {
+                    this.showToast('Failed to copy spec.', 'warning');
+                }
+                document.body.removeChild(textarea);
+            },
+
+            checkout() {
+                const selectedCount = Object.values(currentBuild).filter(v => v !== null).length;
+                if (selectedCount === 0) {
+                    this.showToast('Please select at least one component before ordering.', 'warning');
+                    return;
+                }
+                this.showToast('Order generated successfully! Redirecting to secure checkout...');
+            },
+
+            showToast(message, type = 'success') {
+                const toast = document.getElementById('toast');
+                const toastMessage = document.getElementById('toastMessage');
+                const toastIcon = document.getElementById('toastIcon');
+
+                toastMessage.innerText = message;
+                if (type === 'warning') {
+                    toastIcon.className = 'fa-solid fa-triangle-exclamation text-amber-400 text-lg';
+                } else {
+                    toastIcon.className = 'fa-solid fa-circle-check text-brand-400 text-lg';
+                }
+
+                toast.classList.remove('translate-y-20', 'opacity-0');
+                setTimeout(() => {
+                    toast.classList.add('translate-y-20', 'opacity-0');
+                }, 3500);
+            }
+        };
+
+        // Initialize app on window load
+        window.onload = function() {
+            app.init();
+        };
+    </script>
+</body>
+</html>

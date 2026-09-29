@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Language Fluency Ledger — Daily Rotation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0D1117; --panel:#121821; --panel-2:#161D28;
+    --line:#232C39; --line-soft:#1B222D;
+    --text:#E7EAEE; --text-dim:#8993A1; --text-faint:#5C6472;
+    --amber:#E3A008; --amber-dim:#8A6412; --teal:#3FAE95; --rose:#D9705D;
+    --mono:'IBM Plex Mono', ui-monospace, monospace; --sans:'IBM Plex Sans', system-ui, sans-serif;
+  }
+  :root[data-theme="light"]{
+    --bg:#F5F4F0; --panel:#FFFFFF; --panel-2:#FBFAF7;
+    --line:#DDD9CF; --line-soft:#E9E6DE;
+    --text:#1B1E22; --text-dim:#5C6472; --text-faint:#8B8F94;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#F5F4F0; --panel:#FFFFFF; --panel-2:#FBFAF7;
+      --line:#DDD9CF; --line-soft:#E9E6DE;
+      --text:#1B1E22; --text-dim:#5C6472; --text-faint:#8B8F94;
+    }
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);-webkit-font-smoothing:antialiased;min-height:100vh;}
+  a{color:var(--teal);text-decoration:none;border-bottom:1px solid rgba(63,174,149,0.35);}
+  a:hover{border-bottom-color:var(--teal);}
+  .app{max-width:1180px;margin:0 auto;padding:28px 20px 80px;}
+
+  header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:22px;flex-wrap:wrap;}
+  .brand{display:flex;flex-direction:column;gap:4px;}
+  .brand .kicker{font-family:var(--mono);font-size:12px;color:var(--text-faint);}
+  .brand h1{margin:0;font-size:26px;font-weight:600;letter-spacing:-0.01em;}
+  .stat-block{display:flex;gap:22px;flex-wrap:wrap;}
+  .stat{font-family:var(--mono);font-size:12px;color:var(--text-dim);display:flex;flex-direction:column;gap:3px;align-items:flex-end;}
+  .stat strong{font-size:18px;color:var(--text);font-weight:600;}
+  .reset-link{font-family:var(--mono);font-size:11px;color:var(--text-faint);background:none;border:none;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px;}
+  .reset-link:hover{color:var(--rose);}
+
+  .today-banner{
+    display:flex;justify-content:space-between;align-items:center;gap:20px;
+    border:1px solid var(--amber-dim); background:var(--panel-2);
+    padding:14px 20px; margin-bottom:20px; flex-wrap:wrap;
+  }
+  .today-banner .meta{font-family:var(--mono);font-size:12px;color:var(--text-faint);margin-bottom:4px;}
+  .today-banner h2{margin:0;font-size:19px;font-weight:600;}
+  .today-banner button{
+    font-family:var(--mono);font-size:12.5px;padding:9px 16px;border:1px solid var(--amber);
+    background:none;color:var(--amber);cursor:pointer;white-space:nowrap;
+  }
+  .today-banner button.done{background:var(--amber);color:#15140D;}
+
+  .lang-tabs{display:flex;flex-wrap:wrap;gap:2px;border:1px solid var(--line);width:fit-content;margin-bottom:20px;}
+  .lang-tabs button{
+    font-family:var(--mono);font-size:12px;padding:9px 14px;background:var(--panel);
+    color:var(--text-dim);border:none;cursor:pointer;border-right:1px solid var(--line);position:relative;
+  }
+  .lang-tabs button:last-child{border-right:none;}
+  .lang-tabs button.active{background:var(--panel-2);color:var(--text);}
+  .lang-tabs button:hover:not(.active){color:var(--text);}
+  .lang-tabs button .dot{
+    display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--amber);
+    margin-left:6px;vertical-align:middle;
+  }
+
+  .layout{border:1px solid var(--line);background:var(--panel);padding:26px 30px 34px;margin-bottom:26px;}
+  .main-head{border-bottom:1px solid var(--line-soft);padding-bottom:16px;margin-bottom:20px;}
+  .main-head .meta{font-family:var(--mono);font-size:12px;color:var(--text-faint);margin-bottom:6px;}
+  .main-head h2{margin:0;font-size:22px;font-weight:600;letter-spacing:-0.01em;}
+
+  .section{margin-bottom:26px;}
+  .section h3{font-family:var(--mono);font-size:11.5px;letter-spacing:0.04em;color:var(--text-faint);margin:0 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line-soft);}
+  .link-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px;}
+  .link-list li{font-size:14px;color:var(--text-dim);}
+  .link-list li a{color:var(--text);font-weight:500;}
+  .link-list li .tag-inline{font-family:var(--mono);font-size:10.5px;color:var(--teal);margin-right:8px;}
+
+  table.phrase-table{width:100%;border-collapse:collapse;}
+  table.phrase-table th{
+    font-family:var(--mono);font-size:10.5px;color:var(--text-faint);text-align:left;
+    padding:6px 10px 8px 0;border-bottom:1px solid var(--line-soft);letter-spacing:0.03em;
+  }
+  table.phrase-table td{padding:10px 10px 10px 0;border-bottom:1px solid var(--line-soft);font-size:13.5px;vertical-align:top;}
+  table.phrase-table td.native{color:var(--text);font-weight:500;font-size:15px;}
+  table.phrase-table td.translit{color:var(--text-faint);font-family:var(--mono);font-size:12px;}
+  table.phrase-table td.meaning{color:var(--text-dim);}
+  .listen-btn{
+    font-family:var(--mono);font-size:11px;padding:5px 10px;border:1px solid var(--line);
+    background:var(--panel-2);color:var(--teal);cursor:pointer;white-space:nowrap;
+  }
+  .listen-btn:hover{border-color:var(--teal);}
+  .listen-btn:disabled{opacity:0.35;cursor:default;}
+
+  textarea.notes{
+    width:100%;min-height:110px;background:var(--panel-2);border:1px solid var(--line-soft);
+    color:var(--text);font-family:var(--sans);font-size:13.5px;padding:12px;resize:vertical;
+  }
+  textarea.notes:focus{outline:none;border-color:var(--text-faint);}
+  .notes-saved{font-family:var(--mono);font-size:11px;color:var(--text-faint);margin-top:6px;}
+
+  .log-btn{
+    font-family:var(--mono);font-size:12px;padding:9px 16px;border:1px solid var(--line);
+    background:var(--panel-2);color:var(--text-dim);cursor:pointer;
+  }
+  .log-btn.done{border-color:var(--amber);color:var(--amber);}
+
+  .reminder-panel{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  .reminder-panel input[type="time"]{
+    font-family:var(--mono);font-size:13px;background:var(--panel-2);border:1px solid var(--line-soft);
+    color:var(--text);padding:7px 10px;
+  }
+  .reminder-panel button{font-family:var(--mono);font-size:12px;padding:8px 14px;border:1px solid var(--line);background:var(--panel-2);color:var(--text-dim);cursor:pointer;}
+  .reminder-panel button.on{border-color:var(--teal);color:var(--teal);}
+  .reminder-status{font-family:var(--mono);font-size:11.5px;color:var(--text-faint);width:100%;margin-top:2px;}
+  .fine-print{font-size:12.5px;color:var(--text-faint);line-height:1.6;margin-top:10px;}
+
+  .history-list{list-style:none;margin:0;padding:0;max-height:260px;overflow-y:auto;border:1px solid var(--line-soft);}
+  .history-list li{
+    display:flex;justify-content:space-between;gap:10px;padding:8px 12px;
+    border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--text-dim);
+  }
+  .history-list li:last-child{border-bottom:none;}
+  .history-list li .d{font-family:var(--mono);color:var(--text-faint);}
+  .history-list li .l{color:var(--text);}
+  .history-list li .ok{color:var(--amber);font-family:var(--mono);}
+  .empty-log{padding:14px;font-size:12.5px;color:var(--text-faint);font-family:var(--mono);}
+
+  footer.foot{margin-top:6px;font-family:var(--mono);font-size:11.5px;color:var(--text-faint);text-align:center;}
+  @media (max-width:640px){ .layout{padding:20px 16px 26px;} }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="top">
+    <div class="brand">
+      <span class="kicker">CONTINUOUS · ONE LANGUAGE A DAY · NO END DATE</span>
+      <h1>Language Fluency Ledger</h1>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+      <div class="stat-block">
+        <div class="stat"><span>CYCLE DAY</span><strong id="statCycle">—</strong></div>
+        <div class="stat"><span>STREAK</span><strong id="statStreak">—</strong></div>
+        <div class="stat"><span>TOTAL SESSIONS</span><strong id="statTotal">—</strong></div>
+      </div>
+      <button class="reset-link" id="resetBtn">clear all saved progress</button>
+    </div>
+  </header>
+
+  <div class="today-banner">
+    <div>
+      <div class="meta" id="todayMeta">TODAY</div>
+      <h2 id="todayHeading">—</h2>
+    </div>
+    <button id="todayCompleteBtn">Mark today complete</button>
+  </div>
+
+  <div class="lang-tabs" id="langTabs"></div>
+
+  <div class="layout" id="langPanel"></div>
+
+  <div class="layout" id="historyPanel">
+    <div class="main-head"><h2>Practice History</h2></div>
+    <ul class="history-list" id="historyList"></ul>
+  </div>
+
+  <footer class="foot">saved on this device only, in your browser's local storage — nothing is uploaded anywhere</footer>
+</div>
+
+<script>
+/* ---------------- Language data ---------------- */
+const LANGUAGES = [
+  {id:"en", name:"English", speechLang:"en-US",
+    reading:[["BBC Learning English — free reading & listening","https://www.bbc.co.uk/learningenglish"],["VOA Learning English","https://learningenglish.voanews.com/"]],
+    speaking:[["Tandem — free language exchange partners","https://www.tandem.net/"],["HelloTalk — free language exchange app","https://www.hellotalk.com/"]],
+    phrases:[
+      ["Hello, how are you?","/həˈloʊ haʊ ɑːr juː/","A basic everyday greeting"],
+      ["My name is ...","/maɪ neɪm ɪz/","Introducing yourself"],
+      ["Nice to meet you.","/naɪs tuː miːt juː/","Said after an introduction"],
+      ["Can you help me?","/kæn juː hɛlp miː/","Asking for help"],
+      ["Thank you very much.","/θæŋk juː ˈvɛri mʌtʃ/","Expressing gratitude"]
+    ]},
+  {id:"zh", name:"Mandarin Chinese", speechLang:"zh-CN",
+    reading:[["Du Chinese — free graded reading lessons","https://www.duchinese.net/"],["Slow Chinese podcast (with transcripts)","https://www.slowchinese.net/"]],
+    speaking:[["HelloTalk — free exchange with native speakers","https://www.hellotalk.com/"],["Yoyo Chinese — free pronunciation videos","https://www.yoyochinese.com/"]],
+    phrases:[
+      ["你好","Nǐ hǎo","Hello"],
+      ["我叫……","Wǒ jiào …","My name is ..."],
+      ["很高兴认识你","Hěn gāoxìng rènshi nǐ","Nice to meet you"],
+      ["你能帮我吗？","Nǐ néng bāng wǒ ma?","Can you help me?"],
+      ["谢谢你","Xièxiè nǐ","Thank you"]
+    ]},
+  {id:"es", name:"Spanish", speechLang:"es-ES",
+    reading:[["News in Slow Spanish — free samples","https://about.newsinslowspanish.com/"],["SpanishDict — reading & grammar guides","https://www.spanishdict.com/guide"]],
+    speaking:[["Tandem — free exchange partners","https://www.tandem.net/"],["HelloTalk","https://www.hellotalk.com/"]],
+    phrases:[
+      ["Hola, ¿cómo estás?","OH-la KOH-moh es-TAHS","Hello, how are you?"],
+      ["Me llamo ...","meh YAH-moh","My name is ..."],
+      ["Mucho gusto","MOO-choh GOOS-toh","Nice to meet you"],
+      ["¿Puedes ayudarme?","PWEH-dess ah-yoo-DAR-meh","Can you help me?"],
+      ["Muchas gracias","MOO-chas GRAH-syahs","Thank you very much"]
+    ]},
+  {id:"ar", name:"Arabic (Standard)", speechLang:"ar-SA",
+    reading:[["Madinah Arabic — free reading lessons","https://www.madinaharabic.com/"],["Al Jazeera Learning Arabic","https://learning.aljazeera.net/en"]],
+    speaking:[["HelloTalk","https://www.hellotalk.com/"],["ArabicPod101 — free lessons","https://www.arabicpod101.com/"]],
+    phrases:[
+      ["مرحبًا، كيف حالك؟","Marhaban, kayfa haluka?","Hello, how are you?"],
+      ["اسمي ...","Ismi ...","My name is ..."],
+      ["سعيد بلقائك","Sa'id bi-liqa'ik","Nice to meet you"],
+      ["هل يمكنك مساعدتي؟","Hal yumkinuka musa'adati?","Can you help me?"],
+      ["شكرًا جزيلاً","Shukran jazilan","Thank you very much"]
+    ]},
+  {id:"fr", name:"French", speechLang:"fr-FR",
+    reading:[["News in Slow French — free samples","https://about.newsinslowfrench.com/"],["Le Monde — free articles","https://www.lemonde.fr/"]],
+    speaking:[["Tandem","https://www.tandem.net/"],["Français Authentique — free podcast","https://www.francaisauthentique.com/"]],
+    phrases:[
+      ["Bonjour, comment ça va ?","bohn-ZHOOR koh-mahn sah VAH","Hello, how are you?"],
+      ["Je m'appelle ...","zhuh mah-PELL","My name is ..."],
+      ["Enchanté(e)","ahn-shahn-TAY","Nice to meet you"],
+      ["Pouvez-vous m'aider ?","poo-VAY voo may-DAY","Can you help me?"],
+      ["Merci beaucoup","mehr-SEE boh-KOO","Thank you very much"]
+    ]},
+  {id:"pt", name:"Portuguese", speechLang:"pt-PT",
+    reading:[["News in Slow Portuguese — free samples","https://about.newsinslowportuguese.com/"],["Portuguese Lab Reading","https://portugueselab.com/"]],
+    speaking:[["HelloTalk","https://www.hellotalk.com/"],["PortuguesePod101 — free lessons","https://www.portuguesepod101.com/"]],
+    phrases:[
+      ["Olá, como você está?","oh-LAH KOH-moo voh-SEH es-TAH","Hello, how are you?"],
+      ["Meu nome é ...","meoo NOH-mee eh","My name is ..."],
+      ["Prazer em conhecê-lo","prah-ZEHR eng koh-nyeh-SEH-loo","Nice to meet you"],
+      ["Você pode me ajudar?","voh-SEH POH-dee mee ah-zhoo-DAHR","Can you help me?"],
+      ["Muito obrigado(a)","MOOY-too oh-bree-GAH-doo","Thank you very much"]
+    ]},
+  {id:"ru", name:"Russian", speechLang:"ru-RU",
+    reading:[["Master Russian — free reading texts","https://masterrussian.com/"],["Russian Learn — graded texts","https://russianlearn.com/"]],
+    speaking:[["HelloTalk","https://www.hellotalk.com/"],["RussianPod101 — free lessons","https://www.russianpod101.com/"]],
+    phrases:[
+      ["Здравствуйте, как дела?","Zdravstvuyte, kak dela?","Hello, how are you?"],
+      ["Меня зовут ...","Menya zovut ...","My name is ..."],
+      ["Приятно познакомиться","Priyatno poznakomit'sya","Nice to meet you"],
+      ["Вы можете мне помочь?","Vy mozhete mne pomoch'?","Can you help me?"],
+      ["Большое спасибо","Bol'shoye spasibo","Thank you very much"]
+    ]},
+  {id:"de", name:"German", speechLang:"de-DE",
+    reading:[["Deutsche Welle — Learn German (free graded news)","https://learngerman.dw.com/"],["DW — Nicos Weg free course","https://learngerman.dw.com/en/nicos-weg/c-36519789"]],
+    speaking:[["Tandem","https://www.tandem.net/"],["HelloTalk","https://www.hellotalk.com/"]],
+    phrases:[
+      ["Hallo, wie geht es dir?","HAH-loh vee gayt es deer","Hello, how are you?"],
+      ["Ich heiße ...","ikh HY-suh","My name is ..."],
+      ["Freut mich","froyt mikh","Nice to meet you"],
+      ["Kannst du mir helfen?","kahnst doo meer HEL-fen","Can you help me?"],
+      ["Vielen Dank","FEE-len dahnk","Thank you very much"]
+    ]},
+  {id:"ja", name:"Japanese", speechLang:"ja-JP",
+    reading:[["NHK Easy Japanese News — free graded news","https://www3.nhk.or.jp/news/easy/"],["Tofugu — free articles","https://www.tofugu.com/"]],
+    speaking:[["Tandem","https://www.tandem.net/"],["JapanesePod101 — free lessons","https://www.japanesepod101.com/"]],
+    phrases:[
+      ["こんにちは","Konnichiwa","Hello"],
+      ["私の名前は……です","Watashi no namae wa … desu","My name is ..."],
+      ["はじめまして","Hajimemashite","Nice to meet you"],
+      ["手伝ってもらえますか？","Tetsudatte moraemasu ka?","Can you help me?"],
+      ["どうもありがとうございます","Doumo arigatou gozaimasu","Thank you very much"]
+    ]}
+];
+
+/* ---------------- State ---------------- */
+const STORAGE_KEY = "lang_fluency_ledger_v1";
+const MS_DAY = 86400000;
+let state = {
+  startDate:null,       // yyyy-mm-dd of first launch — anchors the rotation
+  completed:{},         // { "yyyy-mm-dd|langId": true }
+  notes:{},             // { langId: text }
+  reminder:{enabled:false, time:"19:00", lastFired:null}
+};
+try{
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if(raw) state = Object.assign(state, JSON.parse(raw));
+}catch(e){ /* fresh start if storage unavailable */ }
+
+function todayStr(d=new Date()){
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+if(!state.startDate) state.startDate = todayStr();
+
+function save(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+  catch(e){ /* progress just won't persist if storage is blocked */ }
+}
+
+function cycleInfo(){
+  const start = new Date(state.startDate+"T00:00:00");
+  const now = new Date();
+  const diffDays = Math.floor((new Date(todayStr(now)+"T00:00:00") - start) / MS_DAY);
+  const cycleDay = diffDays + 1; // 1-indexed, counts up forever
+  const langIndex = ((diffDays % LANGUAGES.length) + LANGUAGES.length) % LANGUAGES.length;
+  return {cycleDay, langIndex, lang: LANGUAGES[langIndex]};
+}
+
+let selectedLangId = null; // which language panel is currently shown (defaults to today's)
+
+/* ---------------- Speech ---------------- */
+function speak(text, langCode, btn){
+  if(!('speechSynthesis' in window)){
+    if(btn){ btn.textContent = "Voice not supported"; setTimeout(()=>btn.textContent="🔊 Listen", 1500); }
+    return;
+  }
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = langCode;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utter);
+}
+
+/* ---------------- Rendering ---------------- */
+function renderStats(){
+  const {cycleDay} = cycleInfo();
+  document.getElementById("statCycle").textContent = "Day " + cycleDay;
+  document.getElementById("statTotal").textContent = Object.keys(state.completed).length;
+
+  // streak: consecutive days (any language) ending today or yesterday
+  let streak = 0;
+  let cursor = new Date();
+  const daysWithEntry = new Set(Object.keys(state.completed).map(k=>k.split("|")[0]));
+  while(true){
+    const ds = todayStr(cursor);
+    if(daysWithEntry.has(ds)){ streak++; cursor = new Date(cursor.getTime()-MS_DAY); }
+    else break;
+  }
+  document.getElementById("statStreak").textContent = streak + (streak===1 ? " day" : " days");
+}
+
+function renderTodayBanner(){
+  const {cycleDay, lang} = cycleInfo();
+  const ds = todayStr();
+  const key = ds+"|"+lang.id;
+  const isDone = !!state.completed[key];
+  document.getElementById("todayMeta").textContent = "TODAY · CYCLE DAY " + cycleDay + " OF AN ENDLESS 9-LANGUAGE ROTATION";
+  document.getElementById("todayHeading").textContent = "Today's language: " + lang.name;
+  const btn = document.getElementById("todayCompleteBtn");
+  btn.className = isDone ? "done" : "";
+  btn.textContent = isDone ? "✓ Today marked complete" : "Mark today complete";
+  btn.onclick = ()=>{
+    if(state.completed[key]) delete state.completed[key];
+    else state.completed[key] = true;
+    save();
+    renderAll();
+  };
+}
+
+function renderTabs(){
+  const {lang: todayLang} = cycleInfo();
+  const el = document.getElementById("langTabs");
+  el.innerHTML = "";
+  LANGUAGES.forEach(l=>{
+    const btn = document.createElement("button");
+    btn.className = (l.id === selectedLangId) ? "active" : "";
+    btn.innerHTML = l.name + (l.id === todayLang.id ? '<span class="dot" title="today\'s language"></span>' : "");
+    btn.addEventListener("click", ()=>{ selectedLangId = l.id; renderAll(); });
+    el.appendChild(btn);
+  });
+}
+
+function renderLangPanel(){
+  const lang = LANGUAGES.find(l=>l.id===selectedLangId);
+  const el = document.getElementById("langPanel");
+  const linkList = (items)=>items.map(([n,u])=>`<li><a href="${u}" target="_blank" rel="noopener">${n}</a></li>`).join("");
+  const phraseRows = lang.phrases.map((p,i)=>`
+    <tr>
+      <td class="native">${p[0]}</td>
+      <td class="translit">${p[1]}</td>
+      <td class="meaning">${p[2]}</td>
+      <td><button class="listen-btn" data-text="${p[0].replace(/"/g,'&quot;')}" data-lang="${lang.speechLang}">🔊 Listen</button></td>
+    </tr>`).join("");
+
+  const ds = todayStr();
+  const key = ds+"|"+lang.id;
+  const loggedToday = !!state.completed[key];
+  const savedNote = state.notes[lang.id] || "";
+
+  el.innerHTML = `
+    <div class="main-head">
+      <div class="meta">PRACTICE STATION</div>
+      <h2>${lang.name}</h2>
+    </div>
+
+    <div class="section">
+      <h3>FREE READING RESOURCES</h3>
+      <ul class="link-list">${linkList(lang.reading)}</ul>
+    </div>
+
+    <div class="section">
+      <h3>FREE SPEAKING &amp; LISTENING PRACTICE</h3>
+      <ul class="link-list">${linkList(lang.speaking)}</ul>
+    </div>
+
+    <div class="section">
+      <h3>SPEAK-ALONG PHRASES — LISTEN, THEN REPEAT ALOUD</h3>
+      <table class="phrase-table">
+        <thead><tr><th>Phrase</th><th>Sounds like</th><th>Meaning</th><th></th></tr></thead>
+        <tbody>${phraseRows}</tbody>
+      </table>
+      <div class="fine-print">Listen uses your browser's built-in voice — say it out loud a few times after each play. No app or account needed.</div>
+    </div>
+
+    <div class="section">
+      <h3>MY NOTES — WHERE I LEFT OFF</h3>
+      <textarea class="notes" id="notesArea" placeholder="Jot what you covered, tricky words, or what to pick up next time...">${savedNote}</textarea>
+      <div class="notes-saved" id="notesSaved">saved automatically</div>
+    </div>
+
+    <div class="section">
+      <button class="log-btn ${loggedToday?'done':''}" id="logBtn">${loggedToday ? '✓ Session logged for today' : 'Log a practice session for today'}</button>
+    </div>
+  `;
+
+  el.querySelectorAll(".listen-btn").forEach(btn=>{
+    btn.addEventListener("click", ()=>speak(btn.getAttribute("data-text"), btn.getAttribute("data-lang"), btn));
+  });
+
+  const notesArea = document.getElementById("notesArea");
+  let notesTimer;
+  notesArea.addEventListener("input", ()=>{
+    document.getElementById("notesSaved").textContent = "saving...";
+    clearTimeout(notesTimer);
+    notesTimer = setTimeout(()=>{
+      state.notes[lang.id] = notesArea.value;
+      save();
+      document.getElementById("notesSaved").textContent = "saved automatically";
+    }, 500);
+  });
+
+  document.getElementById("logBtn").addEventListener("click", ()=>{
+    if(state.completed[key]) delete state.completed[key];
+    else state.completed[key] = true;
+    save();
+    renderAll();
+  });
+}
+
+function renderHistory(){
+  const el = document.getElementById("historyList");
+  const entries = Object.keys(state.completed)
+    .sort((a,b)=> a<b ? 1 : -1)
+    .slice(0,40)
+    .map(k=>{
+      const [date, langId] = k.split("|");
+      const lang = LANGUAGES.find(l=>l.id===langId);
+      return {date, name: lang ? lang.name : langId};
+    });
+  if(entries.length===0){
+    el.innerHTML = `<div class="empty-log">no sessions logged yet — mark today's language complete to start your history</div>`;
+    return;
+  }
+  el.innerHTML = entries.map(e=>`
+    <li><span class="d">${e.date}</span><span class="l">${e.name}</span><span class="ok">✓ done</span></li>
+  `).join("");
+}
+
+function renderAll(){
+  if(!selectedLangId) selectedLangId = cycleInfo().lang.id;
+  renderStats();
+  renderTodayBanner();
+  renderTabs();
+  renderLangPanel();
+  renderReminderPanel();
+  renderHistory();
+}
+
+/* ---------------- Reminders ---------------- */
+function renderReminderPanel(){
+  const el = document.getElementById("langPanel");
+  const box = document.createElement("div");
+  box.className = "section";
+  box.innerHTML = `
+    <h3>DAILY REMINDER</h3>
+    <div class="reminder-panel">
+      <input type="time" id="reminderTime" value="${state.reminder.time}">
+      <button id="reminderToggle" class="${state.reminder.enabled ? 'on' : ''}">${state.reminder.enabled ? 'Reminder on — click to turn off' : 'Turn on daily reminder'}</button>
+      <button id="reminderTest">Send a test reminder now</button>
+      <div class="reminder-status" id="reminderStatus"></div>
+      <div class="fine-print">This uses your browser's notification pop-ups, so this tab (or window) needs to stay open — a static page can't wake your PC on its own. For the steadiest reminders, keep this open in its own browser window and pin the tab.</div>
+    </div>
+  `;
+  el.appendChild(box);
+
+  const timeInput = document.getElementById("reminderTime");
+  const toggleBtn = document.getElementById("reminderToggle");
+  const testBtn = document.getElementById("reminderTest");
+  const statusEl = document.getElementById("reminderStatus");
+
+  function setStatus(){
+    if(!('Notification' in window)){
+      statusEl.textContent = "This browser doesn't support notifications.";
+      return;
+    }
+    statusEl.textContent = "Notification permission: " + Notification.permission + (state.reminder.enabled ? " · reminder set for " + state.reminder.time : "");
+  }
+  setStatus();
+
+  timeInput.addEventListener("change", ()=>{
+    state.reminder.time = timeInput.value;
+    save();
+    setStatus();
+  });
+
+  toggleBtn.addEventListener("click", ()=>{
+    if(!state.reminder.enabled){
+      if('Notification' in window){
+        Notification.requestPermission().then(()=>{
+          state.reminder.enabled = true;
+          save();
+          renderAll();
+        });
+      }else{
+        alert("Your browser doesn't support desktop notifications.");
+      }
+    }else{
+      state.reminder.enabled = false;
+      save();
+      renderAll();
+    }
+  });
+
+  testBtn.addEventListener("click", ()=>{
+    if(!('Notification' in window)){
+      alert("Notifications aren't supported in this browser.");
+      return;
+    }
+    if(Notification.permission === "granted"){
+      new Notification("Language practice reminder", {body:"Test reminder — this is what your daily nudge will look like."});
+    }else{
+      Notification.requestPermission().then(p=>{
+        if(p==="granted") new Notification("Language practice reminder", {body:"Test reminder — this is what your daily nudge will look like."});
+        setStatus();
+      });
+    }
+  });
+}
+
+let lastFiredMinute = null;
+setInterval(()=>{
+  if(!state.reminder.enabled) return;
+  if(!('Notification' in window) || Notification.permission !== "granted") return;
+  const now = new Date();
+  const hhmm = String(now.getHours()).padStart(2,"0")+":"+String(now.getMinutes()).padStart(2,"0");
+  const today = todayStr();
+  const fireKey = today+"|"+hhmm;
+  if(hhmm === state.reminder.time && state.reminder.lastFired !== fireKey){
+    const {lang} = cycleInfo();
+    new Notification("Time for today's language practice", {body:"Today's language: " + lang.name});
+    state.reminder.lastFired = fireKey;
+    save();
+  }
+}, 20000);
+
+/* ---------------- Reset ---------------- */
+document.getElementById("resetBtn").addEventListener("click", ()=>{
+  if(confirm("Clear all saved progress, notes, and reminder settings on this device?")){
+    state = {startDate:todayStr(), completed:{}, notes:{}, reminder:{enabled:false, time:"19:00", lastFired:null}};
+    save();
+    renderAll();
+  }
+});
+
+renderAll();
+</script>
+</body>
+</html>

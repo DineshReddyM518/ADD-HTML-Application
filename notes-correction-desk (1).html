@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Notes &amp; Correction — Daily Writing Desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0D1117; --panel:#121821; --panel-2:#161D28;
+    --line:#232C39; --line-soft:#1B222D;
+    --text:#E7EAEE; --text-dim:#8993A1; --text-faint:#5C6472;
+    --amber:#E3A008; --amber-dim:#8A6412; --teal:#3FAE95; --rose:#D9705D;
+    --mono:'IBM Plex Mono', ui-monospace, monospace; --sans:'IBM Plex Sans', system-ui, sans-serif;
+  }
+  :root[data-theme="light"]{
+    --bg:#F5F4F0; --panel:#FFFFFF; --panel-2:#FBFAF7;
+    --line:#DDD9CF; --line-soft:#E9E6DE;
+    --text:#1B1E22; --text-dim:#5C6472; --text-faint:#8B8F94;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#F5F4F0; --panel:#FFFFFF; --panel-2:#FBFAF7;
+      --line:#DDD9CF; --line-soft:#E9E6DE;
+      --text:#1B1E22; --text-dim:#5C6472; --text-faint:#8B8F94;
+    }
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);-webkit-font-smoothing:antialiased;min-height:100vh;}
+  .app{max-width:1180px;margin:0 auto;padding:28px 20px 70px;}
+
+  header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:22px;flex-wrap:wrap;}
+  .brand .kicker{font-family:var(--mono);font-size:12px;color:var(--text-faint);}
+  .brand h1{margin:0;font-size:26px;font-weight:600;letter-spacing:-0.01em;}
+  .reset-link{font-family:var(--mono);font-size:11px;color:var(--text-faint);background:none;border:none;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px;}
+  .reset-link:hover{color:var(--rose);}
+
+  .layout{display:grid;grid-template-columns:230px 1fr;gap:0;border:1px solid var(--line);background:var(--panel);}
+  @media (max-width:840px){.layout{grid-template-columns:1fr;} .sidebar{border-right:none !important;border-bottom:1px solid var(--line);}}
+
+  .sidebar{border-right:1px solid var(--line);padding:0;}
+  .sidebar-head{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line-soft);}
+  .sidebar-head span{font-family:var(--mono);font-size:11px;color:var(--text-faint);letter-spacing:0.03em;}
+  .sidebar-head button{font-family:var(--mono);font-size:11px;background:none;border:1px solid var(--line);color:var(--teal);padding:4px 8px;cursor:pointer;}
+  .note-row{padding:10px 14px;cursor:pointer;border-left:2px solid transparent;border-bottom:1px solid var(--line-soft);}
+  .note-row:hover{background:var(--line-soft);}
+  .note-row.active{background:var(--panel-2);border-left:2px solid var(--amber);}
+  .note-row .t{font-size:13px;color:var(--text);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .note-row .d{font-family:var(--mono);font-size:10.5px;color:var(--text-faint);}
+  .empty-notes{padding:16px 14px;font-family:var(--mono);font-size:11.5px;color:var(--text-faint);}
+
+  .main{padding:24px 28px 30px;}
+  .field-row{display:flex;gap:14px;margin-bottom:14px;flex-wrap:wrap;}
+  .field{display:flex;flex-direction:column;gap:5px;}
+  .field label{font-family:var(--mono);font-size:10.5px;color:var(--text-faint);letter-spacing:0.03em;}
+  .field select, .field input[type="text"]{
+    font-family:var(--sans);font-size:13px;background:var(--panel-2);border:1px solid var(--line-soft);
+    color:var(--text);padding:8px 10px;min-width:170px;
+  }
+  .note-title-input{width:100%;font-size:15px;font-weight:600;background:none;border:none;border-bottom:1px solid var(--line-soft);color:var(--text);padding:6px 0 10px;margin-bottom:14px;font-family:var(--sans);}
+  .note-title-input:focus{outline:none;border-bottom-color:var(--text-faint);}
+
+  textarea.editor{
+    width:100%;min-height:220px;background:var(--panel-2);border:1px solid var(--line-soft);
+    color:var(--text);font-family:var(--sans);font-size:14.5px;line-height:1.6;padding:14px;resize:vertical;
+  }
+  textarea.editor:focus{outline:none;border-color:var(--text-faint);}
+
+  .toolbar{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;align-items:center;}
+  .toolbar button{
+    font-family:var(--mono);font-size:13px;padding:11px 20px;border:1px solid var(--teal);
+    background:var(--teal);color:#08211C;cursor:pointer;font-weight:600;
+  }
+  .toolbar button.secondary{border-color:var(--line);color:var(--text-dim);background:none;font-weight:400;}
+  .toolbar button:disabled{opacity:0.35;cursor:default;}
+  .toolbar .status{font-family:var(--mono);font-size:11.5px;color:var(--text-faint);}
+
+  .result-section{margin-top:24px;border-top:1px solid var(--line-soft);padding-top:18px;}
+  .result-section h3{font-family:var(--mono);font-size:11.5px;letter-spacing:0.04em;color:var(--text-faint);margin:0 0 10px;}
+  .result-box{background:var(--panel-2);border:1px solid var(--line-soft);padding:14px 16px;font-size:14.5px;line-height:1.6;white-space:pre-wrap;margin-bottom:12px;}
+  .result-box.original{border-color:var(--rose);border-style:dashed;color:var(--text-dim);}
+  .result-box.corrected{border-color:var(--teal);}
+  .compare-label{font-family:var(--mono);font-size:10.5px;letter-spacing:0.03em;color:var(--text-faint);margin-bottom:6px;display:block;}
+  .notes-fixes{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;}
+  .notes-fixes li{font-size:13px;color:var(--text-dim);padding-left:14px;position:relative;}
+  .notes-fixes li::before{content:"—";position:absolute;left:0;color:var(--text-faint);}
+  .use-corrected{font-family:var(--mono);font-size:11.5px;background:none;border:1px solid var(--line);color:var(--text-dim);padding:6px 10px;cursor:pointer;margin-bottom:12px;}
+  .use-corrected:hover{border-color:var(--teal);color:var(--teal);}
+
+  .banner{
+    border:1px solid var(--line-soft);background:var(--panel-2);padding:14px 16px;
+    font-size:13px;color:var(--text-dim);margin-bottom:18px;line-height:1.6;
+  }
+  footer.foot{margin-top:20px;font-family:var(--mono);font-size:11.5px;color:var(--text-faint);text-align:center;}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <span class="kicker">EMAIL · SCRIPTS · DAILY WRITING</span>
+      <h1>Notes &amp; Correction</h1>
+    </div>
+    <button class="reset-link" id="resetBtn">clear all saved notes</button>
+  </header>
+
+  <div id="unavailableBanner" class="banner" style="display:none;">
+    AI correction and translation aren't available in this view. You can still write and save notes below — the correction and translation buttons need this page's AI feature to be turned on for your account.
+  </div>
+
+  <div class="layout">
+    <nav class="sidebar" id="sidebar">
+      <div class="sidebar-head"><span>SAVED NOTES</span><button id="newNoteBtn">+ New</button></div>
+      <div id="noteList"></div>
+    </nav>
+
+    <main class="main">
+      <input type="text" class="note-title-input" id="noteTitle" placeholder="Untitled note">
+      <textarea class="editor" id="editor" placeholder="Write your email, script, or note here..."></textarea>
+
+      <div class="field-row" style="margin-top:14px;">
+        <div class="field">
+          <label>WRITE IN THIS TONE / TYPE</label>
+          <select id="toneSelect">
+            <option value="professional">Professional</option>
+            <option value="casual">Casual</option>
+            <option value="formal email">Formal email</option>
+            <option value="friendly email">Friendly email</option>
+            <option value="script/dialogue">Script / dialogue</option>
+            <option value="story/creative">Story / creative writing</option>
+            <option value="academic">Academic</option>
+            <option value="social media post">Social media post</option>
+            <option value="report">Report / business memo</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>TRANSLATE TO</label>
+          <select id="langSelect">
+            <option value="">— no translation —</option>
+            <option value="English">English</option>
+            <option value="Mandarin Chinese">Mandarin Chinese</option>
+            <option value="Spanish">Spanish</option>
+            <option value="Arabic">Arabic (Standard)</option>
+            <option value="French">French</option>
+            <option value="Portuguese">Portuguese</option>
+            <option value="Russian">Russian</option>
+            <option value="German">German</option>
+            <option value="Japanese">Japanese</option>
+            <option value="__other">Other (type below)</option>
+          </select>
+        </div>
+        <div class="field" id="otherLangField" style="display:none;">
+          <label>LANGUAGE NAME</label>
+          <input type="text" id="otherLangInput" placeholder="e.g. Hindi">
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <button id="correctBtn">✓ Check &amp; correct</button>
+        <button id="translateBtn" class="secondary">Translate</button>
+        <button id="saveBtn" class="secondary">Save note</button>
+        <span class="status" id="statusText"></span>
+      </div>
+
+      <div class="result-section" id="correctionResult" style="display:none;">
+        <h3>COMPARE — WHAT YOU WROTE VS. THE CORRECTED VERSION</h3>
+        <span class="compare-label">YOUR ORIGINAL</span>
+        <div class="result-box original" id="originalSnapshot"></div>
+        <span class="compare-label">CORRECTED — SPELLING, GRAMMAR, SENTENCE FORMATION &amp; VOCABULARY</span>
+        <div class="result-box corrected" id="correctedText"></div>
+        <button class="use-corrected" id="useCorrectedBtn">Replace my draft with this corrected version</button>
+        <h3>FEEDBACK / REMARKS — WHAT WAS WRONG AND WHY</h3>
+        <ul class="notes-fixes" id="fixList"></ul>
+      </div>
+
+      <div class="result-section" id="translationResult" style="display:none;">
+        <h3 id="translationHeading">TRANSLATION</h3>
+        <div class="result-box" id="translatedText"></div>
+      </div>
+    </main>
+  </div>
+
+  <footer class="foot">notes are saved on this device only — correction and translation are powered by Claude, built into this page</footer>
+</div>
+
+<script>
+/* ---------------- Local storage: notes list ---------------- */
+const STORAGE_KEY = "notes_correction_desk_v1";
+let store = {notes:{}, order:[]}; // notes: {id:{title, content, updated}}
+try{
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if(raw) store = JSON.parse(raw);
+}catch(e){}
+let currentId = store.order[0] || null;
+
+function saveStore(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(store)); }catch(e){}
+}
+function newId(){ return "n" + Date.now() + Math.floor(Math.random()*1000); }
+
+function ensureNote(){
+  if(!currentId || !store.notes[currentId]){
+    const id = newId();
+    store.notes[id] = {title:"", content:"", updated:Date.now()};
+    store.order.unshift(id);
+    currentId = id;
+    saveStore();
+  }
+}
+ensureNote();
+
+function renderNoteList(){
+  const el = document.getElementById("noteList");
+  if(store.order.length===0){
+    el.innerHTML = `<div class="empty-notes">no saved notes yet</div>`;
+    return;
+  }
+  el.innerHTML = store.order.map(id=>{
+    const n = store.notes[id];
+    if(!n) return "";
+    const title = n.title && n.title.trim() ? n.title : (n.content.slice(0,28) || "Untitled note");
+    const d = new Date(n.updated);
+    const dateStr = d.toLocaleDateString() + " " + d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+    return `<div class="note-row ${id===currentId?'active':''}" data-id="${id}">
+      <div class="t">${title}</div>
+      <div class="d">${dateStr}</div>
+    </div>`;
+  }).join("");
+  el.querySelectorAll(".note-row").forEach(row=>{
+    row.addEventListener("click", ()=>{
+      currentId = row.getAttribute("data-id");
+      loadCurrentNote();
+      renderNoteList();
+    });
+  });
+}
+
+function loadCurrentNote(){
+  const n = store.notes[currentId];
+  document.getElementById("noteTitle").value = n.title || "";
+  document.getElementById("editor").value = n.content || "";
+  document.getElementById("correctionResult").style.display = "none";
+  document.getElementById("translationResult").style.display = "none";
+}
+
+let autosaveTimer;
+function scheduleAutosave(){
+  clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(()=>{
+    const n = store.notes[currentId];
+    n.title = document.getElementById("noteTitle").value;
+    n.content = document.getElementById("editor").value;
+    n.updated = Date.now();
+    saveStore();
+    renderNoteList();
+  }, 600);
+}
+document.getElementById("noteTitle").addEventListener("input", scheduleAutosave);
+document.getElementById("editor").addEventListener("input", scheduleAutosave);
+
+document.getElementById("newNoteBtn").addEventListener("click", ()=>{
+  const id = newId();
+  store.notes[id] = {title:"", content:"", updated:Date.now()};
+  store.order.unshift(id);
+  currentId = id;
+  saveStore();
+  loadCurrentNote();
+  renderNoteList();
+});
+
+document.getElementById("saveBtn").addEventListener("click", ()=>{
+  const n = store.notes[currentId];
+  n.title = document.getElementById("noteTitle").value;
+  n.content = document.getElementById("editor").value;
+  n.updated = Date.now();
+  saveStore();
+  renderNoteList();
+  setStatus("saved");
+});
+
+document.getElementById("resetBtn").addEventListener("click", ()=>{
+  if(confirm("Delete all saved notes on this device?")){
+    store = {notes:{}, order:[]};
+    saveStore();
+    currentId = null;
+    ensureNote();
+    loadCurrentNote();
+    renderNoteList();
+  }
+});
+
+document.getElementById("langSelect").addEventListener("change", (e)=>{
+  document.getElementById("otherLangField").style.display = (e.target.value === "__other") ? "flex" : "none";
+});
+
+function setStatus(text){
+  document.getElementById("statusText").textContent = text;
+  if(text) setTimeout(()=>{ if(document.getElementById("statusText").textContent===text) document.getElementById("statusText").textContent=""; }, 3000);
+}
+
+/* ---------------- AI: sample capability ---------------- */
+let sampleFn = null;
+(async ()=>{
+  try{
+    sampleFn = await claude.use("sample");
+  }catch(e){ sampleFn = null; }
+  if(!sampleFn){
+    document.getElementById("unavailableBanner").style.display = "block";
+    document.getElementById("correctBtn").disabled = true;
+    document.getElementById("translateBtn").disabled = true;
+  }
+})();
+
+document.getElementById("correctBtn").addEventListener("click", async ()=>{
+  if(!sampleFn) return;
+  const text = document.getElementById("editor").value.trim();
+  if(!text){ setStatus("write something first"); return; }
+  const tone = document.getElementById("toneSelect").value;
+  const btn = document.getElementById("correctBtn");
+  btn.disabled = true;
+  setStatus("checking...");
+  try{
+    const prompt = `You are a careful writing editor giving feedback to someone learning to write better. Correct spelling, grammar, sentence formation and word choice (vocabulary) in the text below, and rewrite it to fit a "${tone}" tone/genre. Keep the original meaning and length roughly similar. Respond ONLY with valid JSON, no markdown fences, in exactly this shape:
+{"corrected": "the improved text", "fixes": ["specific remark naming the exact word/phrase that was wrong, what was wrong with it (spelling, grammar, sentence structure, or vocabulary), and the fix — e.g. 'recieve -> receive (spelling)' or 'I are going -> I am going (subject-verb agreement)'"]}
+List every notable correction, not just a summary — the person wants to see each mistake individually so they can learn from it.
+
+Text:
+"""${text}"""`;
+    const data = await sampleFn.json(prompt, {modelTier:"default"});
+    document.getElementById("originalSnapshot").textContent = text;
+    document.getElementById("correctedText").textContent = data.corrected || "";
+    const fixList = document.getElementById("fixList");
+    fixList.innerHTML = (data.fixes||[]).map(f=>`<li>${f}</li>`).join("") || "<li>No issues found — this looked clean.</li>";
+    document.getElementById("correctionResult").style.display = "block";
+    document.getElementById("correctionResult").scrollIntoView({behavior:"smooth", block:"start"});
+    setStatus("done");
+  }catch(err){
+    setStatus(err && err.code === "rate_limited" ? "rate limited — try again shortly" : "couldn't complete correction");
+  }finally{
+    btn.disabled = false;
+  }
+});
+
+document.getElementById("useCorrectedBtn").addEventListener("click", ()=>{
+  const corrected = document.getElementById("correctedText").textContent;
+  if(!corrected) return;
+  document.getElementById("editor").value = corrected;
+  scheduleAutosave();
+  setStatus("draft replaced");
+});
+
+document.getElementById("translateBtn").addEventListener("click", async ()=>{
+  if(!sampleFn) return;
+  const text = document.getElementById("editor").value.trim();
+  if(!text){ setStatus("write something first"); return; }
+  let lang = document.getElementById("langSelect").value;
+  if(lang === "__other") lang = document.getElementById("otherLangInput").value.trim();
+  if(!lang){ setStatus("pick a language first"); return; }
+  const btn = document.getElementById("translateBtn");
+  btn.disabled = true;
+  setStatus("translating...");
+  try{
+    const prompt = `Translate the text below into ${lang}. Keep the tone natural and idiomatic, not overly literal. Respond ONLY with valid JSON, no markdown fences, in exactly this shape:
+{"translation": "the translated text"}
+
+Text:
+"""${text}"""`;
+    const data = await sampleFn.json(prompt, {modelTier:"default"});
+    document.getElementById("translationHeading").textContent = "TRANSLATION — " + lang.toUpperCase();
+    document.getElementById("translatedText").textContent = data.translation || "";
+    document.getElementById("translationResult").style.display = "block";
+    setStatus("done");
+  }catch(err){
+    setStatus(err && err.code === "rate_limited" ? "rate limited — try again shortly" : "couldn't complete translation");
+  }finally{
+    btn.disabled = false;
+  }
+});
+
+/* ---------------- Init ---------------- */
+loadCurrentNote();
+renderNoteList();
+</script>
+</body>
+</html>
